@@ -1,0 +1,6 @@
+# mocha.opts
+#  --require should
+#  --reporter dot
+#  --ui bdd
+  -r ts-node/register
+  test/**/*.spec.ts

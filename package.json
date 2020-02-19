@@ -1,0 +1,87 @@
+{
+  "name": "@all41/server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint src/**",
+    "test": "echo \\\"Error: no test specified\\\" && exit 0",
+    "test-manual": "mocha -r ts-node/register test/**/*.spec.ts",
+    "preversion": "run-p test lint build",
+    "postversion": "git push && git push --tags && npm publish",
+    "ncu:view": "ncu -x sequelize",
+    "ncu:upd": "ncu -x sequelize -u"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bluebird": "^3.7.2",
+    "connect-history-api-fallback": "^1.6.0",
+    "cron": "^1.8.2",
+    "dotenv": "^8.2.0",
+    "emailjs": "^2.2.0",
+    "express-bearer-token": "^2.4.0",
+    "express-openid-connect": "^0.5.0",
+    "express-session": "^1.17.0",
+    "jwt-decode": "^2.2.0",
+    "memorystore": "^1.6.1",
+    "node-rsa": "^1.0.7",
+    "node-schedule": "^1.3.2",
+    "reflect-metadata": "^0.1.13",
+    "winston": "^3.2.1",
+    "xmlhttprequest": "^1.8.0"
+  },
+  "devDependencies": {
+    "@types/bluebird": "^3.5.29",
+    "@types/chai": "^4.2.7",
+    "@types/cors": "^2.8.6",
+    "@types/cron": "^1.7.1",
+    "@types/express": "^4.17.2",
+    "@types/express-session": "^1.15.16",
+    "@types/jsonwebtoken": "^8.3.7",
+    "@types/jwt-decode": "^2.2.1",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^13.5.0",
+    "@types/node-rsa": "^1.0.0",
+    "@types/node-schedule": "^1.3.0",
+    "@types/request-promise": "^4.1.45",
+    "@types/validator": "^12.0.1",
+    "@typescript-eslint/eslint-plugin": "^2.17.0",
+    "@typescript-eslint/parser": "^2.17.0",
+    "body-parser": "^1.19.0",
+    "chai": "^4.2.0",
+    "chai-http": "^4.3.0",
+    "cors": "^2.8.5",
+    "cz-conventional-changelog": "^3.0.2",
+    "eslint": "^6.8.0",
+    "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
+    "mocha": "^7.0.1",
+    "mysql2": "^2.1.0",
+    "npm-run-all": "^4.1.5",
+    "request-promise": "^4.2.5",
+    "sequelize": "5.21.0",
+    "sequelize-typescript": "^1.1.0",
+    "ts-node": "^8.6.2",
+    "typescript": "~3.5.3"
+  },
+  "peerDependencies": {
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
+    "mysql2": "^2.1.0",
+    "sequelize": "^5.21.0",
+    "sequelize-typescript": "^1.1.0"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  }
+}
