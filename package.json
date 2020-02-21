@@ -14,7 +14,7 @@
     "test": "echo \\\"Error: no test specified\\\" && exit 0",
     "test-manual": "mocha -r ts-node/register test/**/*.spec.ts",
     "preversion": "run-p test lint build",
-    "postversion": "git push && git push --tags && npm publish",
+    "postversion": "git push && git push --tags && npm publish --access public",
     "ncu:view": "ncu -x sequelize",
     "ncu:upd": "ncu -x sequelize -u"
   },
