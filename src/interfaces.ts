@@ -31,6 +31,7 @@ export interface IServerJobOptions<T = object> {
   name: string;
   config?: T;
   executeOnStart: boolean;
+  context?: any;
 }
 
 export interface IServerDbInstOptions {

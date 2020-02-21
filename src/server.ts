@@ -158,6 +158,7 @@ export class Server {
       onTick: jobOpt.function,
       runOnInit: false,
       start: false,
+      context: jobOpt.context,
     }), options: { execOnStart: jobOpt.executeOnStart}});
     Server.logger.info({
       message: `Job ${jobOpt.name} referenced.`,
