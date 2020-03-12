@@ -21,12 +21,12 @@ export class Server {
 
   // public sequelize!: Sequelize.Sequelize;
   protected options: IServerOptions;
-  private readonly _app: express.Application = express();
-  private readonly _jobs: {
+  protected readonly _app: express.Application = express();
+  protected readonly _jobs: {
     instance: CronJob;
     options: {execOnStart: boolean};
   }[] = [];
-  private readonly _dbs: Db[] = [];
+  protected readonly _dbs: Db[] = [];
 
   public get app(): express.Application {
     return this._app;
