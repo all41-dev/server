@@ -110,9 +110,17 @@ export class Server {
     for(const db of this._dbs) { await db.init(); }
     await new Promise<void>((ok): void => {
       /** @description sort longest route (most slashes) as a "/" route would catch all requests */
-      const sortedRoutes = this._routes.sort((a, b) => 
-        (a.path.match(/\//g) || []).length >
-        (b.path.match(/\//g) || []).length ? 2 : 0);
+      const sortedRoutes = this._routes.sort((a, b) => {
+        const aSlashs = (a.path.match(/\//g) || []).length;
+        const bSlashs = (b.path.match(/\//g) || []).length;
+        if (aSlashs > bSlashs) return 2;
+        if (aSlashs < bSlashs) return 0;
+
+        if (a.path.length > b.path.length) return 2;
+        if (a.path.length < b.path.length) return 0;
+        return 1;
+      });
+      
       for (const route of sortedRoutes) {
         if (route.requireAuth) { this._app.use(route.path, requiresAuth(), route.router); }
         else { this._app.use(route.path, route.router); }
