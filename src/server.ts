@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-import express from 'express';
+import express, { Router } from 'express';
 import * as http from 'http';
 import { IServerApiOptions, IServerDbOptions, IServerJobOptions, IServerOptions, IServerUiOptions, IAuthOptions } from './interfaces';
 import { CronJob } from 'cron';
@@ -22,6 +22,7 @@ export class Server {
   // public sequelize!: Sequelize.Sequelize;
   protected options: IServerOptions;
   protected readonly _app: express.Application = express();
+  protected readonly _routes: {router: Router; path: string; requireAuth: boolean}[] = [];
   protected readonly _jobs: {
     instance: CronJob;
     options: {execOnStart: boolean};
@@ -108,6 +109,15 @@ export class Server {
   public async start(skipJobs = false): Promise<void> {
     for(const db of this._dbs) { await db.init(); }
     await new Promise<void>((ok): void => {
+      /** @description sort longest route (most slashes) as a "/" route would catch all requests */
+      const sortedRoutes = this._routes.sort((a, b) => 
+        (a.path.match(/\//g) || []).length >
+        (b.path.match(/\//g) || []).length ? 2 : 0);
+      for (const route of sortedRoutes) {
+        if (route.requireAuth) { this._app.use(route.path, requiresAuth(), route.router); }
+        else { this._app.use(route.path, route.router); }
+      }
+  
       this.http = this._app.listen(process.env.HTTP_PORT || 8080, (): void => {
         Server.logger.info({
           message: `Api listening on port ${process.env.HTTP_PORT || 8080}!`,
@@ -135,8 +145,9 @@ export class Server {
     const uiInst = ui.instance.init({
       config: ui.config,
     });
-    if (ui.requireAuth) { this._app.use(ui.baseRoute, requiresAuth(), uiInst); }
-    else { this._app.use(ui.baseRoute, uiInst); }
+    this._routes.push({router: uiInst, path: ui.baseRoute, requireAuth: ui.requireAuth || false})
+    // if (ui.requireAuth) { this._app.use(ui.baseRoute, requiresAuth(), uiInst); }
+    // else { this._app.use(ui.baseRoute, uiInst); }
   }
 
   protected _registerApi(apiOpt: IServerApiOptions): void {
@@ -145,8 +156,9 @@ export class Server {
       config: apiOpt.config,
       requireAuth: apiOpt.requireAuth,
     });
-    if (apiOpt.requireAuth) { this._app.use(apiOpt.baseRoute, requiresAuth(), api); }
-    else { this._app.use(apiOpt.baseRoute, api); }
+    this._routes.push({router: api, path: apiOpt.baseRoute, requireAuth: apiOpt.requireAuth || false})
+    // if (apiOpt.requireAuth) { this._app.use(apiOpt.baseRoute, requiresAuth(), api); }
+    // else { this._app.use(apiOpt.baseRoute, api); }
   }
 
   protected _registerDb(dbOpt: IServerDbOptions): void {
