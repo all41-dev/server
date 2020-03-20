@@ -2,7 +2,7 @@ require('dotenv').config();
 
 import express, { Router } from 'express';
 import * as http from 'http';
-import { IServerApiOptions, IServerDbOptions, IServerJobOptions, IServerOptions, IServerUiOptions, IAuthOptions } from './interfaces';
+import { IServerApiOptions, IServerDbOptions, IServerJobOptions, IServerOptions, IServerUiOptions, IAuthOptions, IServerStaticOptions } from './interfaces';
 import { CronJob } from 'cron';
 import winston from 'winston';
 import { Db } from './db';
@@ -83,6 +83,16 @@ export class Server {
       }
     }
 
+    // register static
+    if (options.statics) {
+      const staticArray = Array.isArray(options.statics) ? options.statics : [options.statics];
+
+      for (const stat of staticArray) {
+        if (!options.auth) { stat.requireAuth = false; }
+        this._registerStatic(stat);
+      }
+    }
+
     // register jobs
     if (options.jobs) {
       const jobArray = Array.isArray(options.jobs) ? options.jobs : [options.jobs];
@@ -147,6 +157,19 @@ export class Server {
       job.instance.start();
       if (job.options.execOnStart) { job.instance.fireOnTick(); }
     }
+  }
+
+  protected _registerStatic(staticOptions: IServerStaticOptions): void {
+    const router = Router();
+
+    router.use('/', express.static(staticOptions.ressourcePath));
+    
+    this._routes.push({
+      router: router,
+      path: staticOptions.baseRoute,
+      requireAuth: staticOptions.requireAuth || false});
+    // if (ui.requireAuth) { this._app.use(ui.baseRoute, requiresAuth(), uiInst); }
+    // else { this._app.use(ui.baseRoute, uiInst); }
   }
 
   protected _registerUi(ui: IServerUiOptions): void {

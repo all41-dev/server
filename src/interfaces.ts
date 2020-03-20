@@ -10,6 +10,7 @@ export interface IServerOptions {
   uis?: IServerUiOptions | IServerUiOptions[];
   dbs?: IServerDbOptions | IServerDbOptions[];
   jobs?: IServerJobOptions | IServerJobOptions[];
+  statics?: IServerStaticOptions | IServerStaticOptions[];
   loggerOptions?: LoggerOptions;
 }
 
@@ -48,6 +49,13 @@ export interface IServerDbInstOptions {
 export interface IServerUiOptions<T = object> {
   baseRoute: string;
   instance: UI;
+  config?: T;
+  requireAuth?: boolean;
+}
+
+export interface IServerStaticOptions<T = object> {
+  baseRoute: string;
+  ressourcePath: string;
   config?: T;
   requireAuth?: boolean;
 }
