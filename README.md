@@ -16,10 +16,10 @@ The following environment vars support has been removed, replaced by related par
  | GOOGLE_CLOUD_SQL_CONNECTION_NAME | proxy | string? | undefined |
  | MYSQL_DECIMAL_NUMBERS | mysqlDecimalNumbers | boolean? | false |
 
-**Server (IServerOptions)**
+**Server (IServerOptions, start params)**
 
  | env var | parameter | param type | default |
  | --- | --- | --- | --- |
  | CONSOLE_LOG_LEVEL | consoleLogLevel | 'trace' \| 'debug' \| 'info' \| 'warn' \| 'error' \| 'fatal' | 'debug' |
- | HTTP_PORT | port | number? | 8080 |
+ | HTTP_PORT | port (start function param) | number? | 8080 |
  | SKIP_JOBS | skipJobs (start function param) | boolean? | false |
