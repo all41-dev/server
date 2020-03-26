@@ -6,7 +6,7 @@ const server = new Server({
     baseRoute: '/assets',
     ressourcePath: 'd:/temp',
     requireAuth: false,
-  }
+  },
 });
 
 const port = process.env.HTTP_PORT && isNumber(process.env.HTTP_PORT) ?

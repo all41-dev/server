@@ -2,7 +2,7 @@ require('dotenv').config();
 
 import express, { Router } from 'express';
 import * as http from 'http';
-import { IServerApiOptions, IServerDbOptions, IServerJobOptions, IServerOptions, IServerUiOptions, IAuthOptions, IServerStaticOptions } from './interfaces';
+import { IApiOptions, IServerDbOptions, IServerJobOptions, IServerOptions, IServerUiOptions, IAuthOptions, IServerStaticOptions } from './interfaces';
 import { CronJob } from 'cron';
 import winston from 'winston';
 import { Db } from './db';
@@ -10,6 +10,7 @@ import { auth, requiresAuth } from "express-openid-connect";
 import session from "express-session";
 import bearerToken from "express-bearer-token";
 import JwtDecode from "jwt-decode";
+import { Api } from './api';
 const memoryStore = require('memorystore')(session);
 /**
  * @description hosts all microservice functionalities
@@ -180,12 +181,8 @@ export class Server {
     // else { this._app.use(ui.baseRoute, uiInst); }
   }
 
-  protected _registerApi(apiOpt: IServerApiOptions): void {
-    const api = apiOpt.instance.init({
-      baseRoute: apiOpt.baseRoute,
-      config: apiOpt.config,
-      requireAuth: apiOpt.requireAuth,
-    });
+  protected _registerApi(apiOpt: IApiOptions<Api<any>>): void {
+    const api = new apiOpt.type(apiOpt).init();
     this._routes.push({router: api, path: apiOpt.baseRoute, requireAuth: apiOpt.requireAuth || false})
     // if (apiOpt.requireAuth) { this._app.use(apiOpt.baseRoute, requiresAuth(), api); }
     // else { this._app.use(apiOpt.baseRoute, api); }

@@ -7,7 +7,7 @@ import { LoggerOptions } from 'winston';
 export interface IServerOptions {
   consoleLogLevel?: 'trace'|'debug'|'info'|'warn'|'error'|'fatal';
   auth?: IAuthOptions;
-  apis?: IServerApiOptions | IServerApiOptions[];
+  apis?: IApiOptions<Api<any>> | IApiOptions<Api<any>>[];
   uis?: IServerUiOptions | IServerUiOptions[];
   dbs?: IServerDbOptions | IServerDbOptions[];
   jobs?: IServerJobOptions | IServerJobOptions[];
@@ -15,10 +15,13 @@ export interface IServerOptions {
   loggerOptions?: LoggerOptions;
 }
 
-export interface IServerApiOptions<T = object> {
+export interface IRouteOptions {
   baseRoute: string;
-  instance: Api;
-  config?: T;
+}
+
+export interface IApiOptions<T extends Api<any>> extends IRouteOptions {
+  type: { new(options: IApiOptions<T>): T}
+  config?: any;
   requireAuth?: boolean;
 }
 
@@ -50,22 +53,14 @@ export interface IServerDbInstOptions {
   instanceName?: string;
 }
 
-export interface IServerUiOptions<T = object> {
-  baseRoute: string;
+export interface IServerUiOptions<T = object> extends IRouteOptions {
   instance: UI;
   config?: T;
   requireAuth?: boolean;
 }
 
-export interface IServerStaticOptions<T = object> {
-  baseRoute: string;
+export interface IServerStaticOptions<T = object> extends IRouteOptions {
   ressourcePath: string;
-  config?: T;
-  requireAuth?: boolean;
-}
-
-export interface IApiOptions<T = object> {
-  baseRoute: string;
   config?: T;
   requireAuth?: boolean;
 }

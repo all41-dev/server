@@ -2,17 +2,15 @@ import { Server } from '../src/server';
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { Api } from '../src/api';
-import { IApiOptions } from "../src/interfaces";
 import { Router } from 'express';
 import { ControllerBase } from '../src/controller-base';
 chai.use(chaiHttp);
 
-export class TestApi extends Api {
+export class TestApi extends Api<TestApi> {
   public static inst: TestApi;
   public setStaticInst(): void { TestApi.inst = this; }
 
-  public init(_options: IApiOptions): Router {
-
+  public init(): Router {
     this.router.use('/api', TestController.create());
 
     return this.router;
@@ -36,7 +34,8 @@ describe('Server class', () => {
     const server = new Server({
       apis: [{
         baseRoute: '/test',
-        instance: new TestApi(),
+        type: TestApi,
+        requireAuth: false,
       }]
     })
     server.start().then(() =>
