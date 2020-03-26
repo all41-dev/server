@@ -5,6 +5,7 @@ import { UI } from './ui';
 import { LoggerOptions } from 'winston';
 
 export interface IServerOptions {
+  consoleLogLevel?: 'trace'|'debug'|'info'|'warn'|'error'|'fatal';
   auth?: IAuthOptions;
   apis?: IServerApiOptions | IServerApiOptions[];
   uis?: IServerUiOptions | IServerUiOptions[];
@@ -36,12 +37,15 @@ export interface IServerJobOptions<T = object> {
 }
 
 export interface IServerDbInstOptions {
+  proxy?: string;
+  mysqlDecimalNumbers?: boolean;
+  logging?: boolean;
   hostname?: string;
   dbName: string;
   username: string;
   password: string;
   port?: number;
-  engine?: string;
+  engine?: 'mysql' | 'postgres' | 'mssql' | 'sqlite' | 'mariadb' | undefined;
   sqliteStoragePath?: string;
   instanceName?: string;
 }

@@ -1,4 +1,5 @@
 import { Server } from "./server";
+import { isNumber } from "util";
 
 const server = new Server({
   statics: {
@@ -8,4 +9,8 @@ const server = new Server({
   }
 });
 
-server.start();
+const port = process.env.HTTP_PORT && isNumber(process.env.HTTP_PORT) ?
+  Number.parseInt(process.env.HTTP_PORT) :
+  undefined;
+
+server.start(process.env.SKIP_JOBS === 'true', port);

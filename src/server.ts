@@ -48,7 +48,7 @@ export class Server {
           winston.format.colorize(),
           winston.format.simple(),
           winston.format.errors(),
-        ), level: process.env.CONSOLE_LOG_LEVEL || 'debug',
+        ), level: options.consoleLogLevel || 'debug',
       }));
     }
 
@@ -116,7 +116,7 @@ export class Server {
     });
     for(const job of this._jobs) { job.instance.stop(); }
   }
-  public async start(skipJobs = false): Promise<void> {
+  public async start(skipJobs = false, port = 8080): Promise<void> {
     for(const db of this._dbs) { await db.init(); }
     await new Promise<void>((ok): void => {
       /** @description sort longest route (most slashes) as a "/" route would catch all requests */
@@ -136,9 +136,9 @@ export class Server {
         else { this._app.use(route.path, route.router); }
       }
   
-      this.http = this._app.listen(process.env.HTTP_PORT || 8080, (): void => {
+      this.http = this._app.listen(port, (): void => {
         Server.logger.info({
-          message: `Api listening on port ${process.env.HTTP_PORT || 8080}!`,
+          message: `Api listening on port ${port}!`,
           hash: 'api-state',
         });
         ok();
@@ -152,7 +152,6 @@ export class Server {
   }
 
   public async startJobs(): Promise<void> {
-    if(process.env.SKIP_JOBS === 'true') { return; }
     for(const job of this._jobs) { 
       job.instance.start();
       if (job.options.execOnStart) { job.instance.fireOnTick(); }

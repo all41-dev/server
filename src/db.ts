@@ -9,7 +9,17 @@ export abstract class Db {
   public constructor(options: IServerDbInstOptions) {
     this._options = options;
 
-    this._sequelizeConnect();
+    this._configureSequelize({
+      sqlEngine: options.engine,
+      password: options.password,
+      user: options.username,
+      hostname: options.hostname,
+      logging: options.logging,
+      mysqlDecimalNumbers: options.mysqlDecimalNumbers,
+      port: options.port,
+      proxy: options.proxy,
+      sqliteStoragePath: options.sqliteStoragePath,
+    });
   }
 
   protected async _init(): Promise<void> {
@@ -28,40 +38,51 @@ export abstract class Db {
     }
   }
   
-  protected _sequelizeConnect(): void {
-    if (process.env.SQL_ENGINE === 'sqlite' && process.env.SQLITE_STORAGE_PATH === undefined) {
+  protected _configureSequelize(params: {
+    sqlEngine: 'mysql' | 'postgres' | 'mssql' | 'sqlite' | 'mariadb' | undefined;
+    sqliteStoragePath?: string;
+    hostname?: string;
+    logging?: boolean;
+    user: string;
+    password: string;
+    port?: number;
+    proxy?: string;
+    mysqlDecimalNumbers?: boolean;
+  }): void {
+    if (params.sqlEngine === 'sqlite' && !params.sqliteStoragePath) {
       throw new Error('When db engine is sqlite, sqliteStoragePath must be set. Aborting..');
     }
-    const engine: 'mysql' | 'postgres' | 'mssql' | 'sqlite' | 'mariadb' | undefined =
-      // tslint:disable-next-line: max-line-length
-      (this._options.engine || process.env.SQL_ENGINE) as 'mysql' | 'postgres' | 'mssql' | 'sqlite' | 'mariadb' | undefined;
-    if (!engine || ['mysql', 'postgress', 'mssql', 'sqlite', 'mariadb'].indexOf(engine) === -1) {
-      throw new Error(`unexpected DB engine ${engine}`);
-    }
+
+    const port = params.port ? params.port :
+      params.sqlEngine === 'mssql' ? 1433 :
+      params.sqlEngine === 'postgres' ? 5432 :
+      params.sqlEngine === 'sqlite' ? undefined :
+      3306;// mariadb || mysql
+
     const options: SequelizeOptions = {
       database: this._options.dbName,
-      dialect: engine,
-      host: this._options.hostname || process.env.SQL_HOSTNAME,
-      logging: process.env.DEFAULT_DB_LOGGING && process.env.DEFAULT_DB_LOGGING.toLowerCase().trim() === 'true' ?
+      dialect: params.sqlEngine,
+      host: params.hostname || 'localhost',
+      logging: params.logging ?
         Server.logger.info : false,
-      password: this._options.password,
+      password: params.password,
       pool: {
         acquire: 1000 * 60 * 5,// 5 min
         idle: 10000,
         max: 10,
         min: 1,
       },
-      port: this._options.port || (process.env.SQL_PORT ? Number(process.env.SQL_PORT) : undefined),
-      storage: this._options.sqliteStoragePath || process.env.SQLITE_STORAGE_PATH,
-      username: this._options.username,
+      port: port,
+      storage: params.sqliteStoragePath,
+      username: params.user,
     };
 
     switch (options.dialect) {
       case 'mysql' :
         options.dialectOptions = {
-          socketPath: process.env.GOOGLE_CLOUD_SQL_CONNECTION_NAME ? `/cloudsql/${process.env.GOOGLE_CLOUD_SQL_CONNECTION_NAME}` : undefined,
-          connectTimeout: 1000 * 60 * 5,
-          decimalNumbers: process.env.MYSQL_DECIMAL_NUMBERS === 'true' || false,
+          socketPath: params.proxy,
+          connectTimeout: 1000 * 60 * 5,// 5 minutes
+          decimalNumbers: params.mysqlDecimalNumbers,
         };
         break;
       case 'mssql' :
