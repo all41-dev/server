@@ -5,6 +5,7 @@ Base server that hosts express related apis & uis, sequelize databases and sched
 The following environment vars support has been removed, replaced by related parameters:
 
 **Db**
+
  | env var | parameter | param type | default |
  | --- | --- | --- | --- |
  | SQLITE_STORAGE_PATH | sqliteStoragePath | string? | |
@@ -16,6 +17,7 @@ The following environment vars support has been removed, replaced by related par
  | MYSQL_DECIMAL_NUMBERS | mysqlDecimalNumbers | boolean? | false |
 
 **Server (IServerOptions)**
+
  | env var | parameter | param type | default |
  | --- | --- | --- | --- |
  | CONSOLE_LOG_LEVEL | consoleLogLevel | 'trace' \| 'debug' \| 'info' \| 'warn' \| 'error' \| 'fatal' | 'debug' |
