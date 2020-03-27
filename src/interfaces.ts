@@ -1,14 +1,14 @@
 import Sequelize from 'sequelize-typescript';
 import { Api } from './api';
 import { Db } from './db';
-import { UI } from './ui';
+import { Ui } from './ui';
 import { LoggerOptions } from 'winston';
 
 export interface IServerOptions {
   consoleLogLevel?: 'trace'|'debug'|'info'|'warn'|'error'|'fatal';
   auth?: IAuthOptions;
   apis?: IApiOptions<Api<any>> | IApiOptions<Api<any>>[];
-  uis?: IServerUiOptions | IServerUiOptions[];
+  uis?: IUiOptions<Ui<any>> | IUiOptions<Ui<any>>[];
   dbs?: IDbOptions<Db<any>> | IDbOptions<Db<any>>[];
   jobs?: IJobOptions | IJobOptions[];
   statics?: IServerStaticOptions | IServerStaticOptions[];
@@ -26,7 +26,7 @@ export interface IApiOptions<T extends Api<any>> extends IRouteOptions {
 }
 
 export interface IDbOptions<T extends Db<any>> {
-  type: { new(options: IDbOptions<T>): T; inst: T}
+  type: { new(options: IDbOptions<T>): T; inst: T};
   proxy?: string;
   mysqlDecimalNumbers?: boolean;
   logging?: boolean;
@@ -49,19 +49,14 @@ export interface IJobOptions {
   context?: any;
 }
 
-export interface IServerUiOptions<T = object> extends IRouteOptions {
-  instance: UI;
+export interface IUiOptions<T extends Ui<any>> extends IRouteOptions {
+  type: { new(options: IUiOptions<T>): T};
   config?: T;
   requireAuth?: boolean;
 }
 
 export interface IServerStaticOptions<T = object> extends IRouteOptions {
   ressourcePath: string;
-  config?: T;
-  requireAuth?: boolean;
-}
-
-export interface IUiOptions<T = object> {
   config?: T;
   requireAuth?: boolean;
 }

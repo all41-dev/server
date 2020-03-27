@@ -2,7 +2,7 @@ require('dotenv').config();
 
 import express, { Router } from 'express';
 import * as http from 'http';
-import { IApiOptions, IDbOptions, IJobOptions, IServerOptions, IServerUiOptions, IAuthOptions, IServerStaticOptions } from './interfaces';
+import { IApiOptions, IDbOptions, IJobOptions, IServerOptions, IUiOptions, IAuthOptions, IServerStaticOptions } from './interfaces';
 import { CronJob } from 'cron';
 import winston from 'winston';
 import { Db } from './db';
@@ -11,6 +11,7 @@ import session from "express-session";
 import bearerToken from "express-bearer-token";
 import JwtDecode from "jwt-decode";
 import { Api } from './api';
+import { Ui } from './ui';
 const memoryStore = require('memorystore')(session);
 /**
  * @description hosts all microservice functionalities
@@ -172,11 +173,9 @@ export class Server {
     // else { this._app.use(ui.baseRoute, uiInst); }
   }
 
-  protected _registerUi(ui: IServerUiOptions): void {
-    const uiInst = ui.instance.init({
-      config: ui.config,
-    });
-    this._routes.push({router: uiInst, path: ui.baseRoute, requireAuth: ui.requireAuth || false})
+  protected _registerUi(uiOpt: IUiOptions<Ui<any>>): void {
+    const uiInst = new uiOpt.type(uiOpt).init();
+    this._routes.push({router: uiInst, path: uiOpt.baseRoute, requireAuth: uiOpt.requireAuth || false})
     // if (ui.requireAuth) { this._app.use(ui.baseRoute, requiresAuth(), uiInst); }
     // else { this._app.use(ui.baseRoute, uiInst); }
   }
