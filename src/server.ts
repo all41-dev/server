@@ -2,7 +2,7 @@ require('dotenv').config();
 
 import express, { Router } from 'express';
 import * as http from 'http';
-import { IApiOptions, IDbOptions, IServerJobOptions, IServerOptions, IServerUiOptions, IAuthOptions, IServerStaticOptions } from './interfaces';
+import { IApiOptions, IDbOptions, IJobOptions, IServerOptions, IServerUiOptions, IAuthOptions, IServerStaticOptions } from './interfaces';
 import { CronJob } from 'cron';
 import winston from 'winston';
 import { Db } from './db';
@@ -191,7 +191,7 @@ export class Server {
   protected _registerDb(dbOpt: IDbOptions<Db<any>>): void {
     this._dbs.push(new dbOpt.type(dbOpt));
   }
-  protected _registerJob(jobOpt: IServerJobOptions): void {
+  protected _registerJob(jobOpt: IJobOptions): void {
     this._jobs.push({instance: new CronJob({
       cronTime: jobOpt.schedule,
       onTick: jobOpt.function,

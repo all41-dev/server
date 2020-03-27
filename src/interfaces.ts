@@ -10,7 +10,7 @@ export interface IServerOptions {
   apis?: IApiOptions<Api<any>> | IApiOptions<Api<any>>[];
   uis?: IServerUiOptions | IServerUiOptions[];
   dbs?: IDbOptions<Db<any>> | IDbOptions<Db<any>>[];
-  jobs?: IServerJobOptions | IServerJobOptions[];
+  jobs?: IJobOptions | IJobOptions[];
   statics?: IServerStaticOptions | IServerStaticOptions[];
   loggerOptions?: LoggerOptions;
 }
@@ -40,11 +40,11 @@ export interface IDbOptions<T extends Db<any>> {
   instanceName?: string;
 }
 
-export interface IServerJobOptions<T = object> {
+export interface IJobOptions {
   schedule: string;
   function: () => any;
   name: string;
-  config?: T;
+  config?: any;
   executeOnStart: boolean;
   context?: any;
 }
