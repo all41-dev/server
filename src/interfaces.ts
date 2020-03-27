@@ -11,7 +11,7 @@ export interface IServerOptions {
   uis?: IUiOptions<Ui<any>> | IUiOptions<Ui<any>>[];
   dbs?: IDbOptions<Db<any>> | IDbOptions<Db<any>>[];
   jobs?: IJobOptions | IJobOptions[];
-  statics?: IServerStaticOptions | IServerStaticOptions[];
+  statics?: IStaticRouteOptions | IStaticRouteOptions[];
   loggerOptions?: LoggerOptions;
 }
 
@@ -55,9 +55,9 @@ export interface IUiOptions<T extends Ui<any>> extends IRouteOptions {
   requireAuth?: boolean;
 }
 
-export interface IServerStaticOptions<T = object> extends IRouteOptions {
+export interface IStaticRouteOptions extends IRouteOptions {
   ressourcePath: string;
-  config?: T;
+  config?: any;
   requireAuth?: boolean;
 }
 
@@ -74,12 +74,12 @@ export interface IAuthOptions {
   idpLogout: boolean;
 }
 
-export function applyMixins(derivedCtor: any, baseCtors: any[]): void {
-  baseCtors.forEach((baseCtor): void => {
-    Object.getOwnPropertyNames(baseCtor.prototype).forEach((name): void => {
-      if (name !== 'constructor') {
-        derivedCtor.prototype[name] = baseCtor.prototype[name];
-      }
-    });
-  });
-}
+// export function applyMixins(derivedCtor: any, baseCtors: any[]): void {
+//   baseCtors.forEach((baseCtor): void => {
+//     Object.getOwnPropertyNames(baseCtor.prototype).forEach((name): void => {
+//       if (name !== 'constructor') {
+//         derivedCtor.prototype[name] = baseCtor.prototype[name];
+//       }
+//     });
+//   });
+// }

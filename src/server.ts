@@ -2,7 +2,7 @@ require('dotenv').config();
 
 import express, { Router } from 'express';
 import * as http from 'http';
-import { IApiOptions, IDbOptions, IJobOptions, IServerOptions, IUiOptions, IAuthOptions, IServerStaticOptions } from './interfaces';
+import { IApiOptions, IDbOptions, IJobOptions, IServerOptions, IUiOptions, IAuthOptions, IStaticRouteOptions } from './interfaces';
 import { CronJob } from 'cron';
 import winston from 'winston';
 import { Db } from './db';
@@ -160,7 +160,7 @@ export class Server {
     }
   }
 
-  protected _registerStatic(staticOptions: IServerStaticOptions): void {
+  protected _registerStatic(staticOptions: IStaticRouteOptions): void {
     const router = Router();
 
     router.use('/', express.static(staticOptions.ressourcePath));
