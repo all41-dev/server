@@ -66,11 +66,6 @@ export interface IUiOptions<T = object> {
   requireAuth?: boolean;
 }
 
-export interface IDatabaseOptions<T = object> {
-  sequelize: Sequelize.Sequelize;
-  config?: T;
-}
-
 export interface IAuthOptions {
   required: boolean;
   issuerBaseURL: string;
