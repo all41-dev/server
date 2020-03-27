@@ -50,7 +50,7 @@ export interface IJobOptions {
 
 export interface IUiOptions<T extends Ui<any>> extends IRouteOptions {
   type: {  inst: T; new(options: IUiOptions<T>): T};
-  config?: T;
+  config?: any;
   requireAuth?: boolean;
 }
 
