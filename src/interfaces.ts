@@ -25,7 +25,7 @@ export interface IApiOptions<T extends Api<any>> extends IRouteOptions {
 }
 
 export interface IDbOptions<T extends Db<any>> {
-  type: { inst: T; new(options: IDbOptions<T>): T; };
+  type: { inst: T; new(options: IDbOptions<T>): T };
   proxy?: string;
   mysqlDecimalNumbers?: boolean;
   logging?: boolean;
@@ -49,7 +49,7 @@ export interface IJobOptions {
 }
 
 export interface IUiOptions<T extends Ui<any>> extends IRouteOptions {
-  type: { new(options: IUiOptions<T>): T; inst: T};
+  type: {  inst: T; new(options: IUiOptions<T>): T};
   config?: T;
   requireAuth?: boolean;
 }
