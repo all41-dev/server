@@ -36,9 +36,9 @@ export abstract class Db<T extends Db<T>> {
 
     const port = this._options.port ? this._options.port :
       this._options.engine === 'mssql' ? 1433 :
-      this._options.engine === 'postgres' ? 5432 :
-      this._options.engine === 'sqlite' ? undefined :
-      3306;// mariadb || mysql
+        this._options.engine === 'postgres' ? 5432 :
+          this._options.engine === 'sqlite' ? undefined :
+            3306;// mariadb || mysql
 
     const options: SequelizeOptions = {
       database: this._options.dbName,

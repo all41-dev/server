@@ -1,4 +1,3 @@
-import Sequelize from 'sequelize-typescript';
 import { Api } from './api';
 import { Db } from './db';
 import { Ui } from './ui';
@@ -20,13 +19,13 @@ export interface IRouteOptions {
 }
 
 export interface IApiOptions<T extends Api<any>> extends IRouteOptions {
-  type: { new(options: IApiOptions<T>): T}
+  type: { new(options: IApiOptions<T>): T};
   config?: any;
   requireAuth?: boolean;
 }
 
 export interface IDbOptions<T extends Db<any>> {
-  type: { new(options: IDbOptions<T>): T; inst: T};
+  type: { inst: T; new(options: IDbOptions<T>): T; };
   proxy?: string;
   mysqlDecimalNumbers?: boolean;
   logging?: boolean;
@@ -50,7 +49,7 @@ export interface IJobOptions {
 }
 
 export interface IUiOptions<T extends Ui<any>> extends IRouteOptions {
-  type: { new(options: IUiOptions<T>): T};
+  type: { new(options: IUiOptions<T>): T; inst: T};
   config?: T;
   requireAuth?: boolean;
 }
