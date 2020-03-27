@@ -4,7 +4,7 @@ import { Ui } from './ui';
 import { LoggerOptions } from 'winston';
 
 export interface IServerOptions {
-  consoleLogLevel?: 'trace'|'debug'|'info'|'warn'|'error'|'fatal';
+  consoleLogLevel?: 'silly'|'debug'|'info'|'warn'|'error'|'fatal';
   auth?: IAuthOptions;
   apis?: IApiOptions<Api<any>> | IApiOptions<Api<any>>[];
   uis?: IUiOptions<Ui<any>> | IUiOptions<Ui<any>>[];
