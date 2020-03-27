@@ -9,7 +9,7 @@ export interface IServerOptions {
   auth?: IAuthOptions;
   apis?: IApiOptions<Api<any>> | IApiOptions<Api<any>>[];
   uis?: IServerUiOptions | IServerUiOptions[];
-  dbs?: IServerDbOptions | IServerDbOptions[];
+  dbs?: IDbOptions<Db<any>> | IDbOptions<Db<any>>[];
   jobs?: IServerJobOptions | IServerJobOptions[];
   statics?: IServerStaticOptions | IServerStaticOptions[];
   loggerOptions?: LoggerOptions;
@@ -25,21 +25,8 @@ export interface IApiOptions<T extends Api<any>> extends IRouteOptions {
   requireAuth?: boolean;
 }
 
-export interface IServerDbOptions<T = object> {
-  instance: Db | Db[];
-  config?: T;
-}
-
-export interface IServerJobOptions<T = object> {
-  schedule: string;
-  function: () => any;
-  name: string;
-  config?: T;
-  executeOnStart: boolean;
-  context?: any;
-}
-
-export interface IServerDbInstOptions {
+export interface IDbOptions<T extends Db<any>> {
+  type: { new(options: IDbOptions<T>): T; inst: T}
   proxy?: string;
   mysqlDecimalNumbers?: boolean;
   logging?: boolean;
@@ -51,6 +38,15 @@ export interface IServerDbInstOptions {
   engine?: 'mysql' | 'postgres' | 'mssql' | 'sqlite' | 'mariadb' | undefined;
   sqliteStoragePath?: string;
   instanceName?: string;
+}
+
+export interface IServerJobOptions<T = object> {
+  schedule: string;
+  function: () => any;
+  name: string;
+  config?: T;
+  executeOnStart: boolean;
+  context?: any;
 }
 
 export interface IServerUiOptions<T = object> extends IRouteOptions {

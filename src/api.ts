@@ -7,7 +7,7 @@ export abstract class Api<T extends Api<T>> {
 
   public static inst: Api<any>;
   public router: express.Router;
-  private _options: IApiOptions<Api<T>>;
+  protected _options: IApiOptions<Api<T>>;
 
   public constructor(options: IApiOptions<Api<T>>) {
     this._options = options;

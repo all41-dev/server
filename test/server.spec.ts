@@ -4,6 +4,8 @@ import chaiHttp from 'chai-http';
 import { Api } from '../src/api';
 import { Router } from 'express';
 import { ControllerBase } from '../src/controller-base';
+import { Db } from '../src/db';
+import { Table, Model, PrimaryKey, AutoIncrement, Column, AllowNull, Unique, DataType } from 'sequelize-typescript';
 chai.use(chaiHttp);
 
 export class TestApi extends Api<TestApi> {
@@ -15,6 +17,27 @@ export class TestApi extends Api<TestApi> {
 
     return this.router;
   }
+}
+
+@Table({ modelName: 'person', tableName: 'person', timestamps: false })
+export class DbPerson extends Model<DbPerson> {
+  @PrimaryKey
+  @AutoIncrement
+  @Column(DataType.INTEGER)
+  public id!: number;
+
+  @AllowNull(false)
+  @Unique
+  @Column(DataType.STRING(30))
+  public name!: string;
+}
+
+export class TestDb extends Db<TestDb> {
+  public async init(): Promise<void> {
+    await this._init();
+    this.sequelize.addModels([DbPerson]);
+  }
+  
 }
 
 export class TestController extends ControllerBase {
@@ -43,8 +66,29 @@ describe('Server class', () => {
       chai.request(server.app).get('/test/api')
         .then((res) => {
           chai.expect(res.text).to.eql('Hello All41!');
-          server.stop();
-          done();
+          server.stop().then(() => done());
+        })
+    );
+  }).timeout(0);
+  it('Db', (done) => {
+    process.env.HTTP_PORT = '1234';
+    const server = new Server({
+      dbs: [{
+        type: TestDb,
+        dbName: 'all41',
+        username: 'root',
+        password: process.env.PASSWORD || 'PASSWORD not set',
+        engine: 'mysql',
+      }],
+    })
+    server.start().then(() =>
+    // error http://localhost/test/api don't respond
+      chai.request(server.app).get('/test/api')
+        .then((res) => {
+          DbPerson.findAll().then((res) => {
+            chai.expect(res.length > 0).to.eql(true);
+            server.stop().then(() => done());
+          })
         })
     );
   }).timeout(0);

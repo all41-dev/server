@@ -2,7 +2,7 @@ require('dotenv').config();
 
 import express, { Router } from 'express';
 import * as http from 'http';
-import { IApiOptions, IServerDbOptions, IServerJobOptions, IServerOptions, IServerUiOptions, IAuthOptions, IServerStaticOptions } from './interfaces';
+import { IApiOptions, IDbOptions, IServerJobOptions, IServerOptions, IServerUiOptions, IAuthOptions, IServerStaticOptions } from './interfaces';
 import { CronJob } from 'cron';
 import winston from 'winston';
 import { Db } from './db';
@@ -28,7 +28,7 @@ export class Server {
     instance: CronJob;
     options: {execOnStart: boolean};
   }[] = [];
-  protected readonly _dbs: Db[] = [];
+  protected readonly _dbs: Db<any>[] = [];
 
   public get app(): express.Application {
     return this._app;
@@ -188,8 +188,8 @@ export class Server {
     // else { this._app.use(apiOpt.baseRoute, api); }
   }
 
-  protected _registerDb(dbOpt: IServerDbOptions): void {
-    this._dbs.push(...(Array.isArray(dbOpt.instance) ? dbOpt.instance : [dbOpt.instance]));
+  protected _registerDb(dbOpt: IDbOptions<Db<any>>): void {
+    this._dbs.push(new dbOpt.type(dbOpt));
   }
   protected _registerJob(jobOpt: IServerJobOptions): void {
     this._jobs.push({instance: new CronJob({
