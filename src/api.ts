@@ -3,12 +3,14 @@ import Cors from 'cors';
 import express from 'express';
 import { IApiOptions } from './interfaces';
 
-export abstract class Api {
+export abstract class Api<T extends Api<T>> {
 
-  public static inst: Api;
+  public static inst: Api<any>;
   public router: express.Router;
+  protected _options: IApiOptions<Api<T>>;
 
-  public constructor() {
+  public constructor(options: IApiOptions<Api<T>>) {
+    this._options = options;
     this.setStaticInst();
     this.router = this.createRouter();
   }
@@ -21,7 +23,7 @@ export abstract class Api {
     return router;
   }
 
-  public abstract init(options: IApiOptions): express.Router;
+  public abstract init(): express.Router;
 
   public abstract setStaticInst(): void;
 }

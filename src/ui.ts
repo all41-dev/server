@@ -6,24 +6,26 @@ import { requiresAuth } from "express-openid-connect";
 // tslint:disable-next-line:no-var-requires
 const hist = require('connect-history-api-fallback');
 
-export abstract class UI {
+export abstract class Ui<T extends Ui<T>> {
 
-  public static inst: UI;
+  public static inst: Ui<any>;
   public router: express.Router;
   protected indexHtml!: string;
+  protected _options: IUiOptions<Ui<T>>;
 
-  public constructor() {
-    UI.inst = this;
+  public constructor(options: IUiOptions<Ui<T>>) {
+    this._options  = options;
+    Ui.inst = this;
     this.router = this.createRouter();
   }
 
-  public getBaseRouter(dir: string, options: IUiOptions): express.Router {
+  public getBaseRouter(dir: string, options: IUiOptions<T>): express.Router {
 
     // load angular config to resolve default project
     const angularConfig = require(path.resolve(dir, '../angular.json'));
 
     // return configuration
-    this.router.use('/_config', (req: express.Request, res: express.Response): express.Response => {
+    this.router.use('/_config', (_req: express.Request, res: express.Response): express.Response => {
       return res.json(options.config || {});
     });
 
@@ -47,5 +49,5 @@ export abstract class UI {
     return router;
   }
 
-  public abstract init(options: IUiOptions): express.Router;
+  public abstract init(): express.Router;
 }

@@ -2,7 +2,7 @@ require('dotenv').config();
 
 import express, { Router } from 'express';
 import * as http from 'http';
-import { IServerApiOptions, IServerDbOptions, IServerJobOptions, IServerOptions, IServerUiOptions, IAuthOptions, IServerStaticOptions } from './interfaces';
+import { IApiOptions, IDbOptions, IJobOptions, IServerOptions, IUiOptions, IAuthOptions, IStaticRouteOptions } from './interfaces';
 import { CronJob } from 'cron';
 import winston from 'winston';
 import { Db } from './db';
@@ -10,6 +10,8 @@ import { auth, requiresAuth } from "express-openid-connect";
 import session from "express-session";
 import bearerToken from "express-bearer-token";
 import JwtDecode from "jwt-decode";
+import { Api } from './api';
+import { Ui } from './ui';
 const memoryStore = require('memorystore')(session);
 /**
  * @description hosts all microservice functionalities
@@ -27,7 +29,7 @@ export class Server {
     instance: CronJob;
     options: {execOnStart: boolean};
   }[] = [];
-  protected readonly _dbs: Db[] = [];
+  protected readonly _dbs: Db<any>[] = [];
 
   public get app(): express.Application {
     return this._app;
@@ -158,7 +160,7 @@ export class Server {
     }
   }
 
-  protected _registerStatic(staticOptions: IServerStaticOptions): void {
+  protected _registerStatic(staticOptions: IStaticRouteOptions): void {
     const router = Router();
 
     router.use('/', express.static(staticOptions.ressourcePath));
@@ -171,30 +173,24 @@ export class Server {
     // else { this._app.use(ui.baseRoute, uiInst); }
   }
 
-  protected _registerUi(ui: IServerUiOptions): void {
-    const uiInst = ui.instance.init({
-      config: ui.config,
-    });
-    this._routes.push({router: uiInst, path: ui.baseRoute, requireAuth: ui.requireAuth || false})
+  protected _registerUi(uiOpt: IUiOptions<Ui<any>>): void {
+    const uiInst = new uiOpt.type(uiOpt).init();
+    this._routes.push({router: uiInst, path: uiOpt.baseRoute, requireAuth: uiOpt.requireAuth || false})
     // if (ui.requireAuth) { this._app.use(ui.baseRoute, requiresAuth(), uiInst); }
     // else { this._app.use(ui.baseRoute, uiInst); }
   }
 
-  protected _registerApi(apiOpt: IServerApiOptions): void {
-    const api = apiOpt.instance.init({
-      baseRoute: apiOpt.baseRoute,
-      config: apiOpt.config,
-      requireAuth: apiOpt.requireAuth,
-    });
+  protected _registerApi(apiOpt: IApiOptions<Api<any>>): void {
+    const api = new apiOpt.type(apiOpt).init();
     this._routes.push({router: api, path: apiOpt.baseRoute, requireAuth: apiOpt.requireAuth || false})
     // if (apiOpt.requireAuth) { this._app.use(apiOpt.baseRoute, requiresAuth(), api); }
     // else { this._app.use(apiOpt.baseRoute, api); }
   }
 
-  protected _registerDb(dbOpt: IServerDbOptions): void {
-    this._dbs.push(...(Array.isArray(dbOpt.instance) ? dbOpt.instance : [dbOpt.instance]));
+  protected _registerDb(dbOpt: IDbOptions<Db<any>>): void {
+    this._dbs.push(new dbOpt.type(dbOpt));
   }
-  protected _registerJob(jobOpt: IServerJobOptions): void {
+  protected _registerJob(jobOpt: IJobOptions): void {
     this._jobs.push({instance: new CronJob({
       cronTime: jobOpt.schedule,
       onTick: jobOpt.function,
