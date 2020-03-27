@@ -34,7 +34,7 @@ export interface IDbOptions<T extends Db<any>> {
   username: string;
   password: string;
   port?: number;
-  engine?: 'mysql' | 'postgres' | 'mssql' | 'sqlite' | 'mariadb' | undefined;
+  engine: 'mysql' | 'postgres' | 'mssql' | 'sqlite' | 'mariadb';
   sqliteStoragePath?: string;
   instanceName?: string;
 }
