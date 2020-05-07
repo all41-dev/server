@@ -28,6 +28,7 @@ export interface IDbOptions<T extends Db<any>> {
   type: { inst: T; new(options: IDbOptions<T>): T };
   proxy?: string;
   mysqlDecimalNumbers?: boolean;
+  multipleStatements?: boolean,
   logging?: boolean;
   hostname?: string;
   dbName: string;
