@@ -11,7 +11,7 @@
   "scripts": {
     "build": "tsc",
     "lint": "eslint src/**",
-    "test": "echo \\\"Error: no test specified\\\" && exit 0",
+    "test": "echo \\\"no test specified\\\" && exit 0",
     "test-manual": "mocha -r ts-node/register test/**/*.spec.ts",
     "preversion": "run-p test lint build",
     "postversion": "git push && git push --tags && npm publish --access public",
@@ -21,6 +21,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@all41-dev/db-tools": "^0.0.2",
     "bluebird": "^3.7.2",
     "connect-history-api-fallback": "^1.6.0",
     "cron": "^1.8.2",

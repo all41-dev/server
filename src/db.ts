@@ -1,6 +1,7 @@
 import { DataType, Sequelize, SequelizeOptions } from 'sequelize-typescript';
 import { IDbOptions } from './interfaces';
 import { Server } from './server';
+import { DbTools } from '@all41-dev/db-tools';
 
 export abstract class Db<T extends Db<T>> {
   public static inst: Db<any>;
@@ -20,6 +21,17 @@ export abstract class Db<T extends Db<T>> {
         message: `Connection has been established successfully => ${this._options.dbName}`,
         hash: 'db-connection'
       });
+      if (this._options.dbTools) {
+        const tools = new DbTools(this.sequelize);
+        if (this._options.dbTools.updateOnStartup) {
+          if (this._options.dbTools.app) {
+            tools.setApp(this._options.dbTools.app);
+          }
+          if (this._options.dbTools.scriptsFolder) {
+            tools.update(this._options.dbTools.scriptsFolder)
+          }
+        }
+      }
     } catch (err) {
       Server.logger.error({
         message: `Unable to connect to the database "${this._options.dbName}":`,
