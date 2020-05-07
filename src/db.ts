@@ -76,6 +76,7 @@ export abstract class Db<T extends Db<T>> {
           socketPath: this._options.proxy,
           connectTimeout: 1000 * 60 * 5,// 5 minutes
           decimalNumbers: this._options.mysqlDecimalNumbers,
+          multipleStatements: this._options.multipleStatements,
         };
         break;
       case 'mssql' :
