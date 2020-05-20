@@ -1,3 +1,4 @@
+import os from 'os';
 import Http from 'request-promise';
 import { Request, Response, NextFunction } from 'express';
 import express from 'express';
@@ -49,7 +50,7 @@ export abstract class ControllerBase {
       if (tokenWithHeader === null) { return false; }
       const kid = tokenWithHeader.header.kid;
       if (!tokenWithHeader.payload || !tokenWithHeader.payload.iss) {
-        Server.logger.error(`can\'t get iss value at "payload.iss": ${tokenWithHeader}`);
+        Server.logger.error(`#${os.hostname}: can\'t get iss value at "payload.iss": ${tokenWithHeader}`);
       }
       const iss = tokenWithHeader.payload.iss;
       if (!ControllerBase._certsCache[iss]){

@@ -1,5 +1,4 @@
 require('dotenv').config();
-
 import express, { Router } from 'express';
 import * as http from 'http';
 import { IApiOptions, IDbOptions, IJobOptions, IServerOptions, IUiOptions, IAuthOptions, IStaticRouteOptions } from './interfaces';
@@ -12,6 +11,8 @@ import bearerToken from "express-bearer-token";
 import JwtDecode from "jwt-decode";
 import { Api } from './api';
 import { Ui } from './ui';
+import os from 'os';
+
 const memoryStore = require('memorystore')(session);
 /**
  * @description hosts all microservice functionalities
@@ -110,7 +111,7 @@ export class Server {
     await new Promise((ok): void => {
       this.http.close((): void => {
         Server.logger.info({
-          message: 'server stopped',
+          message: `#all41 server stopped on #${os.hostname}`,
           hash: 'server-state',
         });
         ok();
@@ -140,7 +141,7 @@ export class Server {
   
       this.http = this._app.listen(port, (): void => {
         Server.logger.info({
-          message: `Api listening on port ${port}!`,
+          message: `#all41 #${os.hostname} Api listening on port ${port}!`,
           hash: 'api-state',
         });
         ok();
@@ -150,7 +151,7 @@ export class Server {
       await this.startJobs();
     }
     
-    Server.logger.info('Server started');
+    Server.logger.info(`#all41 Server started on #${os.hostname}`);
   }
 
   public async startJobs(): Promise<void> {
@@ -199,7 +200,7 @@ export class Server {
       context: jobOpt.context,
     }), options: { execOnStart: jobOpt.executeOnStart}});
     Server.logger.info({
-      message: `Job ${jobOpt.name} referenced.`,
+      message: `#Job #${jobOpt.name} referenced on ${os.hostname}.`,
       hash: 'job-state',
     });
   }
