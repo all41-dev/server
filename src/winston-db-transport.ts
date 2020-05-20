@@ -43,7 +43,3 @@ export class DbTransportInstance extends Transport {
     return next(null, true);
   }
 }
-
-export interface IDbConfig {
-
-}

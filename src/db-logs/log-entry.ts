@@ -1,4 +1,4 @@
-import { Model, Table, PrimaryKey, Default, DataType, Column, AllowNull, BelongsTo, ForeignKey, HasMany } from 'sequelize-typescript';
+import { Model, Table, PrimaryKey, Default, DataType, Column, AllowNull, HasMany } from 'sequelize-typescript';
 import { Meta } from './meta';
 
 @Table({ tableName: 'logEntry' })
