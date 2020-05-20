@@ -6,3 +6,5 @@ export * from './controller-base';
 export * from './entity-controller';
 export * from './ui';
 export * from './db';
+export * from './db-logs/winston-db-transport';
+export * from './db-logs/log-db';

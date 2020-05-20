@@ -1,10 +1,10 @@
 import Transport from 'winston-transport';
 import { LogEntry as WinstonLogEntry} from 'winston';
-import { Db } from './db';
-import { IDbOptions } from './interfaces';
-import { LogDb } from './db-logs/log-db';
-import { LogEntry } from './db-logs/log-entry';
-import { Meta } from './db-logs/meta';
+import { Db } from '../db';
+import { IDbOptions } from '../interfaces';
+import { LogDb } from './log-db';
+import { LogEntry } from './log-entry';
+import { Meta } from './meta';
 
 export interface IDbTransportOptions extends Transport.TransportStreamOptions {
   db: IDbOptions<LogDb>;

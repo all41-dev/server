@@ -1,6 +1,6 @@
 import { Server } from "./server";
 import { isNumber } from "util";
-import { DbTransportInstance } from "./winston-db-transport";
+import { DbTransportInstance } from "./db-logs/winston-db-transport";
 import { LogDb } from "./db-logs/log-db";
 
 const server = new Server({
