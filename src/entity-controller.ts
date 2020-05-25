@@ -6,6 +6,11 @@ import { ControllerBase } from './controller-base';
  * @description To be used through static methods or instanced.
  */
 export abstract class EntityController<T extends Entity<any, any>> extends ControllerBase {
+  private _entity: Entity<any, any>;
+  constructor(entity: T) {
+    super();
+    this._entity = entity;
+  }
   public static async getAll(req: Request, res: Response, entity: Entity<any, any>): Promise<void> {
     entity.setFilter(req.query.filter);
     entity.setIncludes(req.query.include);
@@ -50,11 +55,6 @@ export abstract class EntityController<T extends Entity<any, any>> extends Contr
         res.status(500).json(reason);
         throw new Error(reason);
       });
-  }
-  private _entity: Entity<any, any>;
-  constructor(entity: T) {
-    super();
-    this._entity = entity;
   }
   public async getAll(req: Request, res: Response): Promise<void> {
     return EntityController.getAll(req, res, this._entity);
