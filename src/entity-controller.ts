@@ -2,7 +2,10 @@ import { Request, Response } from 'express';
 import { Entity } from './entity';
 import { ControllerBase } from './controller-base';
 
-export abstract class EntityController extends ControllerBase {
+/**
+ * @description To be used through static methods or instanced.
+ */
+export abstract class EntityController<T extends Entity<any, any>> extends ControllerBase {
   public static async getAll(req: Request, res: Response, entity: Entity<any, any>): Promise<void> {
     entity.setFilter(req.query.filter);
     entity.setIncludes(req.query.include);
@@ -47,5 +50,25 @@ export abstract class EntityController extends ControllerBase {
         res.status(500).json(reason);
         throw new Error(reason);
       });
+  }
+  private _entity: Entity<any, any>;
+  constructor(entity: T) {
+    super();
+    this._entity = entity;
+  }
+  public async getAll(req: Request, res: Response): Promise<void> {
+    return EntityController.getAll(req, res, this._entity);
+  }
+  public async getById(req: Request, res: Response, key: string): Promise<void> {
+    return EntityController.getById(req, res, this._entity, key);
+  }
+  public async post(req: Request, res: Response): Promise<void> {
+    return EntityController.post(req, res, this._entity);
+  }
+  public async update(req: Request, res: Response): Promise<void> {
+    return EntityController.update(req, res, this._entity);
+  }
+  public async delete(req: Request, res: Response, key?: string): Promise<void> {
+    return EntityController.delete(req, res, this._entity, key);
   }
 }

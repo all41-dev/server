@@ -1,10 +1,10 @@
 require('dotenv').config();
 import express, { Router } from 'express';
 import * as http from 'http';
-import { IApiOptions, IDbOptions, IJobOptions, IServerOptions, IUiOptions, IAuthOptions, IStaticRouteOptions } from './interfaces';
+import { IApiOptions, IJobOptions, IServerOptions, IUiOptions, IAuthOptions, IStaticRouteOptions } from './interfaces';
 import { CronJob } from 'cron';
 import winston from 'winston';
-import { Db } from './db';
+import { Db, IDbOptions } from '@all41-dev/db-tools';
 import { auth, requiresAuth } from "express-openid-connect";
 import session from "express-session";
 import bearerToken from "express-bearer-token";
@@ -189,6 +189,7 @@ export class Server {
   }
 
   protected _registerDb(dbOpt: IDbOptions<Db<any>>): void {
+    if (!dbOpt.logger && Server._logger) dbOpt.logger = Server._logger;
     this._dbs.push(new dbOpt.type(dbOpt));
   }
   protected _registerJob(jobOpt: IJobOptions): void {

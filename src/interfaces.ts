@@ -1,5 +1,5 @@
 import { Api } from './api';
-import { Db } from './db';
+import { Db, IDbOptions } from '@all41-dev/db-tools';
 import { Ui } from './ui';
 import { LoggerOptions } from 'winston';
 
@@ -22,27 +22,6 @@ export interface IApiOptions<T extends Api<any>> extends IRouteOptions {
   type: { new(options: IApiOptions<T>): T};
   config?: any;
   requireAuth?: boolean;
-}
-
-export interface IDbOptions<T extends Db<any>> {
-  type: { inst: T; new(options: IDbOptions<T>): T };
-  proxy?: string;
-  mysqlDecimalNumbers?: boolean;
-  multipleStatements?: boolean;
-  logging?: boolean;
-  hostname?: string;
-  dbName: string;
-  username: string;
-  password: string;
-  port?: number;
-  engine: 'mysql' | 'postgres' | 'mssql' | 'sqlite' | 'mariadb';
-  sqliteStoragePath?: string;
-  instanceName?: string;
-  dbTools?: {
-    app?: string;
-    scriptsFolder?: string;
-    updateOnStartup?: boolean;
-  };
 }
 
 export interface IJobOptions {
