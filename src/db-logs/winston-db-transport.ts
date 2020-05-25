@@ -24,7 +24,12 @@ export class DbTransportInstance extends Transport {
 
     const metas = Object.keys(info)
       .filter((k) => !['message', 'level'].includes(k))
-      .map((k) => new Meta({ key: k, value: (info as any)[k]} as Partial<Meta>));
+      .map((k) => {
+        let value = (info as any)[k];
+        if (typeof value !== 'string') value = `${value}`;
+        const meta = new Meta({ key: k, value } as Partial<Meta>);
+        return meta;
+      });
 
     const logEntry = new LogEntry(info instanceof Error ? {
       levelCode: info.level,
