@@ -7,7 +7,7 @@ import { ControllerBase } from './controller-base';
  */
 export abstract class EntityController<T extends Entity<any, any>> extends ControllerBase {
   /** @description To be set within create function */
-  protected _entity?: T;
+  protected static _entity?: Entity<any, any>;
   // constructor(entity: T) {
   //   super();
   //   this._entity = entity;
