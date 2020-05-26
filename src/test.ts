@@ -1,6 +1,6 @@
 import { Server } from "./server";
 import { isNumber } from "util";
-// import { DbTransportInstance } from "./db-logs/winston-db-transport";
+import { DbLogTransportInstance, LogDb } from "@all41-dev/log";
 // import { LogDb } from "./db-logs/log-db";
 
 const server = new Server({
@@ -13,17 +13,17 @@ const server = new Server({
     level: 'info',
     // defaultMeta: ['test', 'all41ServerApp', `${os.hostname}Host`],
     defaultMeta: { foo: 'fooBar' },
-    // transports: new DbTransportInstance({
-    //   db: {
-    //     dbName: 'all41Log',
-    //     engine: 'mariadb',
-    //     username: 'root',
-    //     password: process.env.PASSWORD || 'PASSWORD not set',
-    //     hostname: 'localhost',
-    //     type: LogDb,
-    //   },
-    //   level: 'info',
-    // })
+    transports: new DbLogTransportInstance({
+      db: {
+        dbName: 'all41Log',
+        engine: 'mariadb',
+        username: 'root',
+        password: process.env.PASSWORD || 'PASSWORD not set',
+        hostname: 'localhost',
+        type: LogDb,
+      },
+      level: 'info',
+    })
   }
 });
 
