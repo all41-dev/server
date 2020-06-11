@@ -33,9 +33,11 @@ export abstract class ControllerBase {
       });
     };
   }
-
-  protected static async hasAccess(scope: string[], req: Request): Promise<boolean> {
+  protected static async getTokenScope(req: Request): Promise<string | false> {
+    if ((req as any).__tokenScope) return (req as any).__tokenScope;
+    
     let token: {scope: string};
+
     if((req as any).openid) {
       token = (req as any).openid.tokens;
     } else {
@@ -75,10 +77,15 @@ export abstract class ControllerBase {
     if (token === null) {
       throw new Error('Expected the token to be an Object');
     }
+    (req as any).__tokenScope = token.scope;
+    return token.scope;
+  }
 
-    const permissionsStr = token.scope;
+  protected static async hasAccess(scope: string[], req: Request): Promise<boolean> {
+    const tokenScope = await ControllerBase.getTokenScope(req);
+    if (!tokenScope) return false;
     // concat flatten array of arrays to array
-    const permissions: string[][] = ([] as string[][]).concat.apply([], permissionsStr.split(' ')
+    const permissions: string[][] = ([] as string[][]).concat.apply([], tokenScope.split(' ')
       .map((p: string): string[] => {
         // functions for cartesian product, from -> https://stackoverflow.com/a/43053803/1073588
         const f = (a: any, b: any): never[] => [].concat(...a.map((d: any): any => b.map((e: any): any => [].concat(d, e))));
