@@ -33,9 +33,9 @@ export abstract class ControllerBase {
       });
     };
   }
-  protected static async getTokenScope(req: Request): Promise<string | false> {
+  public static async getTokenScope(req: Request): Promise<string | false> {
     if ((req as any).__tokenScope) return (req as any).__tokenScope;
-    
+
     let token: {scope: string};
 
     if((req as any).openid) {
