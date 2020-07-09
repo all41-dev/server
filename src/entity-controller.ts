@@ -34,6 +34,8 @@ export abstract class EntityController<T extends Entity<any, any>> extends Contr
       });
   }
   public static async post(req: Request, res: Response, entity: Entity<any, any>): Promise<void> {
+    entity.setIncludes(req.query.include);
+
     return entity.post(req.body)
       .then((data): void => {res.json(data)} )
       .catch((reason): void => {
@@ -42,6 +44,8 @@ export abstract class EntityController<T extends Entity<any, any>> extends Contr
       });
   }
   public static async update(req: Request, res: Response, entity: Entity<any, any>): Promise<void> {
+    entity.setIncludes(req.query.include);
+
     return entity.put(req.body)
       .then((data): void => {res.json(data)} )
       .catch((reason): void => {
@@ -51,7 +55,7 @@ export abstract class EntityController<T extends Entity<any, any>> extends Contr
   }
   public static async delete(req: Request, res: Response, entity: Entity<any, any>, key?: string): Promise<void> {
     return entity.del(req.params.id, key)
-      .then((data): void => {res.json(data)} )
+      .then((): void => { res.send(); } )
       .catch((reason): void => {
         res.status(500).json(reason);
         throw new Error(reason);
