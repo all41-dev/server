@@ -41,7 +41,6 @@
   },
   "devDependencies": {
     "@all41-dev/log": "0.0.2",
-    "@all41-dev/server": "^1.5.0",
     "@types/bluebird": "^3.5.29",
     "@types/chai": "^4.2.7",
     "@types/cors": "^2.8.6",
