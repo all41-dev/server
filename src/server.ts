@@ -50,7 +50,7 @@ export class Server {
         format: winston.format.combine(
           winston.format.colorize(),
           winston.format.timestamp(),
-          winston.format.printf(ev => `${ev.timestamp}>${ev.level}: ${ev.message}`),
+          winston.format.printf(ev => `${ev.timestamp}> ${ev.level}: ${ev.message}`),
           // winston.format.errors(),
         ), level: options.consoleLogLevel || 'debug',
       }));
@@ -112,7 +112,7 @@ export class Server {
     await new Promise((ok): void => {
       this.http.close((): void => {
         Server.logger.info({
-          message: `#all41 server stopped on #${os.hostname}`,
+          message: `server stopped on ${os.hostname}`,
           hash: 'server-state',
         });
         ok();
@@ -142,7 +142,7 @@ export class Server {
   
       this.http = this._app.listen(port, (): void => {
         Server.logger.info({
-          message: `#all41 #${os.hostname} Api listening on port ${port}!`,
+          message: `${os.hostname} Api listening on port ${port}!`,
           hash: 'api-state',
         });
         ok();
@@ -152,7 +152,7 @@ export class Server {
       await this.startJobs();
     }
     
-    Server.logger.info(`#all41 Server started on #${os.hostname}`);
+    Server.logger.info(`Server started on ${os.hostname}`);
   }
 
   public async startJobs(): Promise<void> {
@@ -202,7 +202,7 @@ export class Server {
       context: jobOpt.context,
     }), options: { execOnStart: jobOpt.executeOnStart}});
     Server.logger.info({
-      message: `#Job #${jobOpt.name} referenced on ${os.hostname}.`,
+      message: `Job ${jobOpt.name} referenced on ${os.hostname}.`,
       hash: 'job-state',
     });
   }
