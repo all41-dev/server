@@ -49,8 +49,9 @@ export class Server {
       Server._logger.add(new winston.transports.Console({
         format: winston.format.combine(
           winston.format.colorize(),
-          winston.format.simple(),
-          winston.format.errors(),
+          winston.format.timestamp(),
+          winston.format.printf(ev => `${ev.timestamp}>${ev.level}: ${ev.message}`),
+          // winston.format.errors(),
         ), level: options.consoleLogLevel || 'debug',
       }));
     }
