@@ -1,4 +1,3 @@
-import * as bodyParser from 'body-parser';
 import Cors from 'cors';
 import express from 'express';
 import { IApiOptions } from './interfaces';
@@ -17,8 +16,8 @@ export abstract class Api<T extends Api<T>> {
 
   protected createRouter(): express.Router {
     const router = express.Router();
-    router.use(bodyParser.json({ limit: '6mb' }));
-    router.use(bodyParser.urlencoded({ extended: true }));
+    router.use(express.json({ limit: '6mb' }));
+    router.use(express.urlencoded({ extended: true }));
     router.use(Cors());
     return router;
   }
