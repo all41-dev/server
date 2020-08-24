@@ -12,6 +12,7 @@ const server = new Server({
     defaultMeta: { foo: 'fooBar' },
   }
 });
+// eslint-disable-next-line no-console
 console.info(`FOO=${process.env.FOO}`)
 const port = process.env.HTTP_PORT && typeof process.env.HTTP_PORT === 'number' ?
   Number.parseInt(process.env.HTTP_PORT) :

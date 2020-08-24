@@ -1,5 +1,6 @@
 import minimist from 'minimist';
 const args = minimist(process.argv.slice(2));
+// eslint-disable-next-line no-console
 if (args.ENV_FILE_PATH) console.info(`Using config file: ${args.ENV_FILE_PATH}`);
 args.ENV_FILE_PATH ?
   require('dotenv').config({ path: args.ENV_FILE_PATH}) :
