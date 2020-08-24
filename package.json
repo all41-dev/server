@@ -40,7 +40,7 @@
     "xmlhttprequest": "^1.8.0"
   },
   "devDependencies": {
-    "@all41-dev/log": "0.0.2",
+    "@all41-dev/log": "1.0.2",
     "@types/bluebird": "^3.5.29",
     "@types/chai": "^4.2.7",
     "@types/cors": "^2.8.6",
