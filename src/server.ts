@@ -1,5 +1,8 @@
-process.env.ENV_FILE_PATH ?
-  require('dotenv').config({ path: process.env.ENV_FILE_PATH}) :
+import minimist from 'minimist';
+const args = minimist(process.argv.slice(2));
+if (args.ENV_FILE_PATH) console.info(`Using config file: ${args.ENV_FILE_PATH}`);
+args.ENV_FILE_PATH ?
+  require('dotenv').config({ path: args.ENV_FILE_PATH}) :
   require('dotenv').config();
 import express, { Router } from 'express';
 import * as http from 'http';
