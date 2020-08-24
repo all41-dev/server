@@ -1,4 +1,6 @@
-require('dotenv').config();
+process.env.ENV_FILE_PATH ?
+  require('dotenv').config({ path: process.env.ENV_FILE_PATH}) :
+  require('dotenv').config();
 import express, { Router } from 'express';
 import * as http from 'http';
 import { IApiOptions, IJobOptions, IServerOptions, IUiOptions, IAuthOptions, IStaticRouteOptions } from './interfaces';
