@@ -106,7 +106,7 @@ export abstract class ControllerBase {
     return express.Router();
   }
 
-  private static async getToken(req: Request): Promise<{ scope: string, username: string }|false> {
+  private static async getToken(req: Request): Promise<{ scope: string; username: string }|false> {
     if ((req as any).__token) return (req as any).__token;
 
     let token: {scope: string};
