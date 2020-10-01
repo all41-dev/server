@@ -36,49 +36,17 @@ export abstract class ControllerBase {
   public static async getTokenScope(req: Request): Promise<string | false> {
     if ((req as any).__tokenScope) return (req as any).__tokenScope;
 
-    let token: {scope: string};
+    const token = await ControllerBase.getToken(req);
+    if (!token) return false;
 
-    if((req as any).openid) {
-      token = (req as any).openid.tokens;
-    } else {
-      const authorizationHeader = req.headers.authorization;
-
-      if (authorizationHeader === undefined || !authorizationHeader.toLowerCase().startsWith('bearer ')) {
-        return false;
-      }
-      const jwtString = authorizationHeader.substr(7);
-      const tokenWithHeader = Jwt.decode(jwtString, { complete: true }) as any;
-
-      if (tokenWithHeader === null) { return false; }
-      const kid = tokenWithHeader.header.kid;
-      if (!tokenWithHeader.payload || !tokenWithHeader.payload.iss) {
-        Server.logger.error(`${os.hostname}: can\'t get iss value at "payload.iss": ${tokenWithHeader}`);
-      }
-      const iss = tokenWithHeader.payload.iss;
-      if (!ControllerBase._certsCache[iss]){
-        ControllerBase._certsCache[iss] = await Http.get(`${iss}/oauth2/certs`);
-      }
-
-      const certs = JSON.parse(ControllerBase._certsCache[iss]);
-      //const certs = JSON.parse(this.httpGet(`${iss}/oauth2/certs`));
-      const keyDef = (certs.keys as [{ kid: string; n: string; e: string }]).find((k): boolean => k.kid === kid);
-      if (keyDef === undefined) { return false; }
-
-      const key = new NodeRSA({ b: 256 });
-      key.importKey({
-        e: Buffer.from(keyDef.e, 'base64'),
-        n: Buffer.from(keyDef.n, 'base64'),
-      }/*, 'pkcs1-public-pem'*/);
-      const publicKey = key.exportKey('pkcs1-public-pem');
-
-      token = Jwt.verify(jwtString, publicKey) as { scope: string };
-    }
-
-    if (token === null) {
-      throw new Error('Expected the token to be an Object');
-    }
     (req as any).__tokenScope = token.scope;
     return token.scope;
+  }
+  public static async getTokenUser(req: Request): Promise<string | false> {
+    const token = await ControllerBase.getToken(req);
+    if (!token) return false;
+
+    return token.username;
   }
 
   protected static async hasAccess(scope: string[], req: Request): Promise<boolean> {
@@ -136,6 +104,55 @@ export abstract class ControllerBase {
 
   protected static getNewRouter(): express.Router {
     return express.Router();
+  }
+
+  private static async getToken(req: Request): Promise<{ scope: string, username: string }|false> {
+    if ((req as any).__token) return (req as any).__token;
+
+    let token: {scope: string};
+
+    if((req as any).openid) {
+      token = (req as any).openid.tokens;
+    } else {
+      const authorizationHeader = req.headers.authorization;
+
+      if (authorizationHeader === undefined || !authorizationHeader.toLowerCase().startsWith('bearer ')) {
+        return false;
+      }
+      const jwtString = authorizationHeader.substr(7);
+      const tokenWithHeader = Jwt.decode(jwtString, { complete: true }) as any;
+
+      if (tokenWithHeader === null) { return false; }
+      const kid = tokenWithHeader.header.kid;
+      if (!tokenWithHeader.payload || !tokenWithHeader.payload.iss) {
+        Server.logger.error(`${os.hostname}: can\'t get iss value at "payload.iss": ${tokenWithHeader}`);
+      }
+      const iss = tokenWithHeader.payload.iss;
+      if (!ControllerBase._certsCache[iss]){
+        ControllerBase._certsCache[iss] = await Http.get(`${iss}/oauth2/certs`);
+      }
+
+      const certs = JSON.parse(ControllerBase._certsCache[iss]);
+      //const certs = JSON.parse(this.httpGet(`${iss}/oauth2/certs`));
+      const keyDef = (certs.keys as [{ kid: string; n: string; e: string }]).find((k): boolean => k.kid === kid);
+      if (keyDef === undefined) { return false; }
+
+      const key = new NodeRSA({ b: 256 });
+      key.importKey({
+        e: Buffer.from(keyDef.e, 'base64'),
+        n: Buffer.from(keyDef.n, 'base64'),
+      }/*, 'pkcs1-public-pem'*/);
+      const publicKey = key.exportKey('pkcs1-public-pem');
+
+      token = Jwt.verify(jwtString, publicKey) as { scope: string };
+    }
+
+    if (token === null) {
+      throw new Error('Expected the token to be an Object');
+    }
+    (req as any).__token = token;
+
+    return token;
   }
 
   public addScript(src: string): ControllerBase {
