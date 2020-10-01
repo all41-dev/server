@@ -109,7 +109,7 @@ export abstract class ControllerBase {
   private static async getToken(req: Request): Promise<{ scope: string; username: string }|false> {
     if ((req as any).__token) return (req as any).__token;
 
-    let token: {scope: string};
+    let token: {scope: string; username: string};
 
     if((req as any).openid) {
       token = (req as any).openid.tokens;
@@ -144,7 +144,7 @@ export abstract class ControllerBase {
       }/*, 'pkcs1-public-pem'*/);
       const publicKey = key.exportKey('pkcs1-public-pem');
 
-      token = Jwt.verify(jwtString, publicKey) as { scope: string };
+      token = Jwt.verify(jwtString, publicKey) as { scope: string; username: string };
     }
 
     if (token === null) {
