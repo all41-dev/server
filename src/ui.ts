@@ -2,6 +2,7 @@ import express from 'express';
 import * as path from 'path';
 import { IUiOptions } from './interfaces';
 import { requiresAuth } from "express-openid-connect";
+import { ControllerBase } from './controller-base';
 
 // tslint:disable-next-line:no-var-requires
 const hist = require('connect-history-api-fallback');
@@ -38,13 +39,16 @@ export abstract class Ui<T extends Ui<T>> {
     return this.router;
   }
 
-  protected createRouter(): express.Router {
+  protected createRouter(authScope?: string[]): express.Router {
     const router = express.Router();
 
     // enable history fallback for angular application
     router.use(hist({
       verbose: true,
     }));
+    if (authScope) {
+      router.use(ControllerBase.checkAccess(authScope));
+    }
 
     return router;
   }
