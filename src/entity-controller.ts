@@ -14,7 +14,7 @@ export abstract class EntityController<T extends Entity<any, any>> extends Contr
   // }
   public static async getAll(req: Request, res: Response, entity: Entity<any, any>): Promise<void> {
     entity.setFilter(req.query.filter);
-    entity.setIncludes(req.query.include);
+    entity.setIncludes(req.query.include as any);
 
     return entity.get()
       .then((data): void => {res.json(data)} )
@@ -24,7 +24,7 @@ export abstract class EntityController<T extends Entity<any, any>> extends Contr
       });
   }
   public static async getById(req: Request, res: Response, entity: Entity<any, any>, key: string): Promise<void> {
-    entity.setIncludes(req.query.include);
+    entity.setIncludes(req.query.include as any);
 
     return entity.get(req.params.id, key)
       .then((data): void => {res.json(data)} )
@@ -34,7 +34,7 @@ export abstract class EntityController<T extends Entity<any, any>> extends Contr
       });
   }
   public static async post(req: Request, res: Response, entity: Entity<any, any>): Promise<void> {
-    entity.setIncludes(req.query.include);
+    entity.setIncludes(req.query.include as any);
 
     return entity.post(req.body)
       .then((data): void => {res.json(data)} )
@@ -44,7 +44,7 @@ export abstract class EntityController<T extends Entity<any, any>> extends Contr
       });
   }
   public static async update(req: Request, res: Response, entity: Entity<any, any>): Promise<void> {
-    entity.setIncludes(req.query.include);
+    entity.setIncludes(req.query.include as any);
 
     return entity.put(req.body)
       .then((data): void => {res.json(data)} )
