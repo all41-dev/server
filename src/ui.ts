@@ -32,23 +32,26 @@ export abstract class Ui<T extends Ui<T>> {
 
     // read dist path with help of angular config
     const p = path.resolve(dir, './' + angularConfig.defaultProject);
-    if (this._options.config && (this._options.config as any).requireAuth) { this.router.use('/', requiresAuth(), express.static(p)); }
+    if (this._options.config && (this._options.config as any).requireAuth) {
+      if (this._options.requireScope) {
+        this.router.use('/', requiresAuth(), ControllerBase.checkAccess(this._options.requireScope), express.static(p));
+      } else {
+        this.router.use('/', requiresAuth(), express.static(p));
+      }
+    }
     else { this.router.use('/', express.static(p)); }
 
     // add router to provided application
     return this.router;
   }
 
-  protected createRouter(authScope?: string[]): express.Router {
+  protected createRouter(): express.Router {
     const router = express.Router();
 
     // enable history fallback for angular application
     router.use(hist({
       verbose: true,
     }));
-    if (authScope) {
-      router.use(ControllerBase.checkAccess(authScope));
-    }
 
     return router;
   }

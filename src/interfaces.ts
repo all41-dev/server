@@ -37,6 +37,7 @@ export interface IUiOptions<T extends Ui<any>> extends IRouteOptions {
   type: {  inst: T; new(options: IUiOptions<T>): T};
   config?: any;
   requireAuth?: boolean;
+  requireScope?: string[];
 }
 
 export interface IStaticRouteOptions extends IRouteOptions {
