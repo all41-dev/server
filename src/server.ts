@@ -46,68 +46,77 @@ export class Server {
 
   public constructor(options: IServerOptions) {
     this.options = options;
-    Server._logger = winston.createLogger(options.loggerOptions);
-    //
-    // If we're not in production then **ALSO** log to the `console`
-    // with the colorized simple format.
-    //
-    if (process.env.NODE_ENV !== 'production') {
-      Server._logger.add(new winston.transports.Console({
-        format: winston.format.combine(
-          winston.format.colorize(),
-          winston.format.timestamp(),
-          winston.format.printf(ev => `${ev.timestamp}> ${ev.level}: ${ev.message}`),
+    try {
+      if (!options.loggerOptions) options.loggerOptions = {};
+      options.loggerOptions.levels = winston.config.syslog.levels;
+      Server._logger = winston.createLogger(options.loggerOptions);
+      //
+      // If we're not in production then **ALSO** log to the `console`
+      // with the colorized simple format.
+      //
+      if (process.env.NODE_ENV !== 'production') {
+        Server._logger.add(new winston.transports.Console({
+          format: winston.format.combine(
+            winston.format.colorize(),
+            winston.format.timestamp(),
+            winston.format.printf(ev => `${ev.timestamp}> ${ev.level}: ${ev.message}`),
           // winston.format.errors(),
-        ), level: options.consoleLogLevel || 'debug',
-      }));
-    }
-
-    // register dbs
-    if (options.dbs) {
-      const dbArray = Array.isArray(options.dbs) ? options.dbs : [options.dbs];
-
-      for (const db of dbArray) { this._registerDb(db); }
-    }
-
-    if(options.auth) {
-      this._registerAuth(options.auth);
-    }
-
-    // register uis
-    if (options.uis) {
-      const uiArray = Array.isArray(options.uis) ? options.uis : [options.uis];
-
-      for (const ui of uiArray) {
-        if (!options.auth) { ui.requireAuth = false; }
-        this._registerUi(ui);
+          ), level: options.consoleLogLevel || 'debug',
+        }));
       }
-    }
 
-    // register apis
-    if (options.apis) {
-      const apiArray = Array.isArray(options.apis) ? options.apis : [options.apis];
+      // register dbs
+      if (options.dbs) {
+        const dbArray = Array.isArray(options.dbs) ? options.dbs : [options.dbs];
 
-      for (const api of apiArray) {
-        if (!options.auth) { api.requireAuth = false; }
-        this._registerApi(api);
+        for (const db of dbArray) { this._registerDb(db); }
       }
-    }
 
-    // register static
-    if (options.statics) {
-      const staticArray = Array.isArray(options.statics) ? options.statics : [options.statics];
-
-      for (const stat of staticArray) {
-        if (!options.auth) { stat.requireAuth = false; }
-        this._registerStatic(stat);
+      if(options.auth) {
+        this._registerAuth(options.auth);
       }
-    }
 
-    // register jobs
-    if (options.jobs) {
-      const jobArray = Array.isArray(options.jobs) ? options.jobs : [options.jobs];
+      // register uis
+      if (options.uis) {
+        const uiArray = Array.isArray(options.uis) ? options.uis : [options.uis];
 
-      for (const job of jobArray) { this._registerJob(job); }
+        for (const ui of uiArray) {
+          if (!options.auth) { ui.requireAuth = false; }
+          this._registerUi(ui);
+        }
+      }
+
+      // register apis
+      if (options.apis) {
+        const apiArray = Array.isArray(options.apis) ? options.apis : [options.apis];
+
+        for (const api of apiArray) {
+          if (!options.auth) { api.requireAuth = false; }
+          this._registerApi(api);
+        }
+      }
+
+      // register static
+      if (options.statics) {
+        const staticArray = Array.isArray(options.statics) ? options.statics : [options.statics];
+
+        for (const stat of staticArray) {
+          if (!options.auth) { stat.requireAuth = false; }
+          this._registerStatic(stat);
+        }
+      }
+
+      // register jobs
+      if (options.jobs) {
+        const jobArray = Array.isArray(options.jobs) ? options.jobs : [options.jobs];
+
+        for (const job of jobArray) { this._registerJob(job); }
+      }
+    } catch (error) {
+      Server.logger.log('crit', error, {
+        title: 'error while building all41 server',
+        body: 'exception thrown in all41.server.Server constructor\nServer is stopped'
+      })
     }
   }
 
@@ -127,38 +136,45 @@ export class Server {
     for(const job of this._jobs) { job.instance.stop(); }
   }
   public async start(skipJobs = false, port = 8080): Promise<void> {
-    for(const db of this._dbs) { await db.init(); }
-    await new Promise<void>((ok): void => {
+    try {
+      for (const db of this._dbs) { await db.init(); }
+      await new Promise<void>((ok): void => {
       /** @description sort longest route (most slashes) as a "/" route would catch all requests */
-      const sortedRoutes = this._routes.sort((a, b) => {
-        const aSlashs = (a.path.match(/\//g) || []).length;
-        const bSlashs = (b.path.match(/\//g) || []).length;
-        if (aSlashs > bSlashs) return 2;
-        if (aSlashs < bSlashs) return 0;
+        const sortedRoutes = this._routes.sort((a, b) => {
+          const aSlashs = (a.path.match(/\//g) || []).length;
+          const bSlashs = (b.path.match(/\//g) || []).length;
+          if (aSlashs > bSlashs) return 2;
+          if (aSlashs < bSlashs) return 0;
 
-        if (a.path.length > b.path.length) return 2;
-        if (a.path.length < b.path.length) return 0;
-        return 1;
-      });
-      
-      for (const route of sortedRoutes) {
-        if (route.requireAuth) { this._app.use(route.path, requiresAuth(), route.router); }
-        else { this._app.use(route.path, route.router); }
-      }
-  
-      this.http = this._app.listen(port, (): void => {
-        Server.logger.info({
-          message: `${os.hostname} Api listening on port ${port}!`,
-          hash: 'api-state',
+          if (a.path.length > b.path.length) return 2;
+          if (a.path.length < b.path.length) return 0;
+          return 1;
         });
-        ok();
+      
+        for (const route of sortedRoutes) {
+          if (route.requireAuth) { this._app.use(route.path, requiresAuth(), route.router); }
+          else { this._app.use(route.path, route.router); }
+        }
+  
+        this.http = this._app.listen(port, (): void => {
+          Server.logger.info({
+            message: `${os.hostname} Api listening on port ${port}!`,
+            hash: 'api-state',
+          });
+          ok();
+        });
       });
-    });
-    if (!skipJobs) {
-      await this.startJobs();
-    }
+      if (!skipJobs) {
+        await this.startJobs();
+      }
     
-    Server.logger.info(`Server started on ${os.hostname}`);
+      Server.logger.info(`Server started on ${os.hostname}`);
+    } catch (error) {
+      Server.logger.log('crit', error, {
+        title: 'error while starting all41 server',
+        body: 'exception thrown in all41.server.Server.start()\nServer is stopped'
+      })
+    }
   }
 
   public async startJobs(): Promise<void> {
