@@ -22,8 +22,3 @@ const port = process.env.HTTP_PORT && typeof process.env.HTTP_PORT === 'number' 
 server.start(process.env.SKIP_JOBS === 'true', port);
 Server.logger.error(new Error('Error from test'));
 Server.logger.info('test with meta', { ber: 'baz' });
-const le: LogEntry = {
-  level: 'error',
-  message: 
-}
-Server.logger.log(le);
