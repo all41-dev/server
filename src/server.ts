@@ -18,6 +18,7 @@ import JwtDecode from "jwt-decode";
 import { Api } from './api';
 import { Ui } from './ui';
 import os from 'os';
+import { ok } from 'assert';
 
 const memoryStore = require('memorystore')(session);
 /**
@@ -27,6 +28,7 @@ export class Server {
   private static _logger: winston.Logger;
 
   public http!: http.Server;
+  public httpPort?: number;
 
   // public sequelize!: Sequelize.Sequelize;
   protected options: IServerOptions;
@@ -135,7 +137,22 @@ export class Server {
     });
     for(const job of this._jobs) { job.instance.stop(); }
   }
+  public async restart(): Promise<void> {
+    if (!this.http) {
+      throw new Error('http server not started');
+    }
+    Server.logger.info('restarting server');
+    await this.stop();
+    await new Promise((ok): void => {
+      this._app.listen(this.httpPort, () => {
+        Server.logger.info('Restart successful.')
+        ok();
+      })
+    });
+    for(const job of this._jobs) { job.instance.stop(); }
+  }
   public async start(skipJobs = false, port = 8080): Promise<void> {
+    this.httpPort = port;
     try {
       for (const db of this._dbs) { await db.init(); }
       await new Promise<void>((ok): void => {
@@ -156,7 +173,7 @@ export class Server {
           else { this._app.use(route.path, route.router); }
         }
   
-        this.http = this._app.listen(port, (): void => {
+        this.http = this._app.listen(this.httpPort, (): void => {
           Server.logger.info({
             message: `${os.hostname} Api listening on port ${port}!`,
             hash: 'api-state',

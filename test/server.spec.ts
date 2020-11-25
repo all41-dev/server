@@ -4,7 +4,6 @@ import chaiHttp from 'chai-http';
 import { Api } from '../src/api';
 import { Router } from 'express';
 import { ControllerBase } from '../src/controller-base';
-import { Db } from '../src/db';
 import { Table, Model, PrimaryKey, AutoIncrement, Column, AllowNull, Unique, DataType } from 'sequelize-typescript';
 chai.use(chaiHttp);
 
