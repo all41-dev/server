@@ -8,7 +8,7 @@ args.ENV_FILE_PATH ?
 import express, { Router } from 'express';
 import * as http from 'http';
 import { IApiOptions, IJobOptions, IServerOptions, IUiOptions, IAuthOptions, IStaticRouteOptions } from './interfaces';
-import { CronJob } from 'cron';
+import { CronJob, job } from 'cron';
 import winston from 'winston';
 import { Db, IDbOptions } from '@all41-dev/db-tools';
 import { auth, requiresAuth } from "express-openid-connect";
@@ -195,29 +195,41 @@ export class Server {
     }
   }
 
-  public async startJobs(): Promise<void> {
+  public startJobs(): void {
     for(const job of this._jobs) { 
       job.instance.start();
       if (job.options.execOnStart) { job.instance.fireOnTick(); }
     }
   }
 
-  public async stopJobs(): Promise<void> {
+  public stopJobs(): void {
     for(const job of this._jobs) { 
       job.instance.stop();
     }
   }
-  public async stopJob(code: string): Promise<void> {
+  public stopJob(code: string): void {
     const job = this._jobs.find((j) => j.code === code);
     if (!job) throw new Error(`job '${code}' not found, can't be stopped.`);
     job.instance.stop();
   }
 
-  public async startJob(code: string, doExecute = false): Promise<void> {
+  public startJob(code: string, doExecute = false): void {
     const job = this._jobs.find((j) => j.code === code);
     if (!job) throw new Error(`job '${code}' not found, can't be started.`);
     job.instance.start();
     if (doExecute) job.instance.fireOnTick();
+  }
+
+  public executeJob(code: string): void {
+    const job = this._jobs.find((j) => j.code === code);
+    if (!job) throw new Error(`job '${code}' not found, can't be executed.`);
+    job.instance.fireOnTick();
+  }
+
+  public isJobActive(code: string): boolean {
+    const job = this._jobs.find((j) => j.code === code);
+    if (!job) throw new Error(`job '${code}' not found`);
+    return job.instance.running || false;
   }
 
   protected _registerStatic(staticOptions: IStaticRouteOptions): void {
