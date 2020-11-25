@@ -291,7 +291,7 @@ export class Server {
       runOnInit: false,
       start: false,
       context: jobOpt.context,
-    }), code: jobOpt.name ,options: { execOnStart: jobOpt.executeOnStart}});
+    }), code: jobOpt.name, isScheduled: true ,options: { execOnStart: jobOpt.executeOnStart}});
     Server.logger.info({
       message: `Job ${jobOpt.name} referenced on ${os.hostname}.`,
       hash: 'job-state',
