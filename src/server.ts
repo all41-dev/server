@@ -242,7 +242,11 @@ export class Server {
     job.instance.fireOnTick();
     Server.logger.info(`job ${code} ad-hoc execution started`);
   }
-
+  public isJobScheduled(code: string): boolean {
+    const job = this._jobs.find((j) => j.code === code);
+    if (!job) throw new Error(`job '${code}' not found`);
+    return job.isScheduled || false;
+  }
   public isJobRunning(code: string): boolean {
     const job = this._jobs.find((j) => j.code === code);
     if (!job) throw new Error(`job '${code}' not found`);
