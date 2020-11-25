@@ -37,7 +37,7 @@ export class Server {
   protected readonly _jobs: {
     instance: CronJob;
     code: string;
-    isScheduled: boolean;
+    isScheduled?: boolean;
     options: {execOnStart: boolean};
   }[] = [];
   protected readonly _dbs: Db<any>[] = [];
