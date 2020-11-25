@@ -201,7 +201,7 @@ export class Server {
     for(const job of this._jobs) { 
       job.instance.start();
       job.isScheduled = true;
-      Server.logger.info(`job ${job.code} unscheduled`);
+      Server.logger.info(`job ${job.code} scheduled`);
       if (job.options.execOnStart) {
         job.instance.fireOnTick();
         Server.logger.info(`job ${job.code} execution started`);
@@ -291,7 +291,7 @@ export class Server {
       runOnInit: false,
       start: false,
       context: jobOpt.context,
-    }), code: jobOpt.name, isScheduled: true, options: { execOnStart: jobOpt.executeOnStart }
+    }), code: jobOpt.name, isScheduled: false, options: { execOnStart: jobOpt.executeOnStart }
     });
     Server.logger.info({
       message: `Job ${jobOpt.name} referenced on ${os.hostname}.`,
