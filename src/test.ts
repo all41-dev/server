@@ -21,8 +21,12 @@ const port = process.env.HTTP_PORT && typeof process.env.HTTP_PORT === 'number' 
 
 server.start(process.env.SKIP_JOBS === 'true', port).then(() => {
   Server.logger.debug('server started');
-  server.restart().then(() => {
-    Server.logger.debug('Server restart ended');
+  server.stop().then(() => {
+    setTimeout(() => {
+      server.start();
+      Server.logger.debug('Server restart ended');
+    }, 5000);
+    
   })
 })
 // Server.logger.error(new Error('Error from test'));

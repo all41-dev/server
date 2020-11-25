@@ -37,6 +37,7 @@ export class Server {
   protected readonly _jobs: {
     instance: CronJob;
     code: string;
+    isScheduled: boolean;
     options: {execOnStart: boolean};
   }[] = [];
   protected readonly _dbs: Db<any>[] = [];
@@ -139,6 +140,7 @@ export class Server {
     for(const job of this._jobs) { job.instance.stop(); }
   }
   public async restart(): Promise<void> {
+
     if (!this.http) {
       throw new Error('http server not started');
     }
@@ -198,6 +200,7 @@ export class Server {
   public scheduleJobs(): void {
     for(const job of this._jobs) { 
       job.instance.start();
+      job.isScheduled = true;
       Server.logger.info(`job ${job.code} unscheduled`);
       if (job.options.execOnStart) {
         job.instance.fireOnTick();
@@ -209,6 +212,7 @@ export class Server {
   public unscheduleJobs(): void {
     for(const job of this._jobs) { 
       job.instance.stop();
+      job.isScheduled = false;
       Server.logger.info(`job ${job.code} unscheduled`);
     }
   }
@@ -216,6 +220,7 @@ export class Server {
     const job = this._jobs.find((j) => j.code === code);
     if (!job) throw new Error(`job '${code}' not found, can't be stopped.`);
     job.instance.stop();
+    job.isScheduled = false;
     Server.logger.info(`job ${code} unscheduled`);
   }
 
@@ -223,6 +228,7 @@ export class Server {
     const job = this._jobs.find((j) => j.code === code);
     if (!job) throw new Error(`job '${code}' not found, can't be started.`);
     job.instance.start();
+    job.isScheduled = true
     Server.logger.info(`job ${code} scheduled`);
     if (doExecute) {
       job.instance.fireOnTick();
@@ -237,7 +243,7 @@ export class Server {
     Server.logger.info(`job ${code} ad-hoc execution started`);
   }
 
-  public isJobActive(code: string): boolean {
+  public isJobRunning(code: string): boolean {
     const job = this._jobs.find((j) => j.code === code);
     if (!job) throw new Error(`job '${code}' not found`);
     return job.instance.running || false;
