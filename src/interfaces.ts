@@ -4,7 +4,7 @@ import { Ui } from './ui';
 import { LoggerOptions } from 'winston';
 
 export interface IServerOptions {
-  consoleLogLevel?: 'silly'|'debug'|'info'|'warn'|'error'|'fatal';
+  consoleLogLevel?: string;
   auth?: IAuthOptions;
   apis?: IApiOptions<Api<any>> | IApiOptions<Api<any>>[];
   uis?: IUiOptions<Ui<any>> | IUiOptions<Ui<any>>[];
@@ -12,6 +12,7 @@ export interface IServerOptions {
   jobs?: IJobOptions | IJobOptions[];
   statics?: IStaticRouteOptions | IStaticRouteOptions[];
   loggerOptions?: LoggerOptions;
+  skipJobScheduleAtStartup?: boolean;
 }
 
 export interface IRouteOptions {

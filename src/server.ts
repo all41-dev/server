@@ -154,7 +154,8 @@ export class Server {
     });
     for(const job of this._jobs) { job.instance.stop(); }
   }
-  public async start(skipJobSchedules = false, port = 8080): Promise<void> {
+  public async start(port = 8080): Promise<void> {
+    if (this.options.skipJobScheduleAtStartup) this.unscheduleJobs();
     this.httpPort = port;
     try {
       for (const db of this._dbs) { await db.init(); }
@@ -291,7 +292,8 @@ export class Server {
       runOnInit: false,
       start: false,
       context: jobOpt.context,
-    }), code: jobOpt.name, isScheduled: true ,options: { execOnStart: jobOpt.executeOnStart}});
+    }), code: jobOpt.name, isScheduled: true, options: { execOnStart: jobOpt.executeOnStart }
+    });
     Server.logger.info({
       message: `Job ${jobOpt.name} referenced on ${os.hostname}.`,
       hash: 'job-state',

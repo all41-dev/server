@@ -11,7 +11,8 @@ const server = new Server({
     level: 'debug',
     // defaultMeta: ['test', 'all41ServerApp', `${os.hostname}Host`],
     defaultMeta: { foo: 'fooBar' },
-  }
+  },
+  skipJobScheduleAtStartup: true,
 });
 // eslint-disable-next-line no-console
 console.info(`FOO=${process.env.FOO}`)
