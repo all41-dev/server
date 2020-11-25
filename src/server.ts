@@ -36,6 +36,7 @@ export class Server {
   protected readonly _routes: {router: Router; path: string; requireAuth: boolean}[] = [];
   protected readonly _jobs: {
     instance: CronJob;
+    code: string;
     options: {execOnStart: boolean};
   }[] = [];
   protected readonly _dbs: Db<any>[] = [];
@@ -201,6 +202,24 @@ export class Server {
     }
   }
 
+  public async stopJobs(): Promise<void> {
+    for(const job of this._jobs) { 
+      job.instance.stop();
+    }
+  }
+  public async stopJob(code: string): Promise<void> {
+    const job = this._jobs.find((j) => j.code === code);
+    if (!job) throw new Error(`job '${code}' not found, can't be stopped.`);
+    job.instance.stop();
+  }
+
+  public async startJob(code: string, doExecute = false): Promise<void> {
+    const job = this._jobs.find((j) => j.code === code);
+    if (!job) throw new Error(`job '${code}' not found, can't be started.`);
+    job.instance.start();
+    if (doExecute) job.instance.fireOnTick();
+  }
+
   protected _registerStatic(staticOptions: IStaticRouteOptions): void {
     const router = Router();
 
@@ -239,7 +258,7 @@ export class Server {
       runOnInit: false,
       start: false,
       context: jobOpt.context,
-    }), options: { execOnStart: jobOpt.executeOnStart}});
+    }), code: jobOpt.name ,options: { execOnStart: jobOpt.executeOnStart}});
     Server.logger.info({
       message: `Job ${jobOpt.name} referenced on ${os.hostname}.`,
       hash: 'job-state',
