@@ -152,7 +152,7 @@ export class Server {
     });
     for(const job of this._jobs) { job.instance.stop(); }
   }
-  public async start(skipJobs = false, port = 8080): Promise<void> {
+  public async start(skipJobSchedules = false, port = 8080): Promise<void> {
     this.httpPort = port;
     try {
       for (const db of this._dbs) { await db.init(); }
@@ -182,8 +182,8 @@ export class Server {
           ok();
         });
       });
-      if (!skipJobs) {
-        await this.startJobs();
+      if (!skipJobSchedules) {
+        await this.scheduleJobs();
       }
     
       Server.logger.info(`Server started on ${os.hostname}`);
@@ -195,35 +195,46 @@ export class Server {
     }
   }
 
-  public startJobs(): void {
+  public scheduleJobs(): void {
     for(const job of this._jobs) { 
       job.instance.start();
-      if (job.options.execOnStart) { job.instance.fireOnTick(); }
+      Server.logger.info(`job ${job.code} unscheduled`);
+      if (job.options.execOnStart) {
+        job.instance.fireOnTick();
+        Server.logger.info(`job ${job.code} execution started`);
+      }
     }
   }
 
-  public stopJobs(): void {
+  public unscheduleJobs(): void {
     for(const job of this._jobs) { 
       job.instance.stop();
+      Server.logger.info(`job ${job.code} unscheduled`);
     }
   }
-  public stopJob(code: string): void {
+  public unscheduleJob(code: string): void {
     const job = this._jobs.find((j) => j.code === code);
     if (!job) throw new Error(`job '${code}' not found, can't be stopped.`);
     job.instance.stop();
+    Server.logger.info(`job ${code} unscheduled`);
   }
 
-  public startJob(code: string, doExecute = false): void {
+  public scheduleJob(code: string, doExecute = false): void {
     const job = this._jobs.find((j) => j.code === code);
     if (!job) throw new Error(`job '${code}' not found, can't be started.`);
     job.instance.start();
-    if (doExecute) job.instance.fireOnTick();
+    Server.logger.info(`job ${code} scheduled`);
+    if (doExecute) {
+      job.instance.fireOnTick();
+      Server.logger.info(`job ${code} execution started`);
+    }
   }
 
   public executeJob(code: string): void {
     const job = this._jobs.find((j) => j.code === code);
     if (!job) throw new Error(`job '${code}' not found, can't be executed.`);
     job.instance.fireOnTick();
+    Server.logger.info(`job ${code} ad-hoc execution started`);
   }
 
   public isJobActive(code: string): boolean {
