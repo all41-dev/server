@@ -155,7 +155,6 @@ export class Server {
     for(const job of this._jobs) { job.instance.stop(); }
   }
   public async start(port = 8080): Promise<void> {
-    if (this.options.skipJobScheduleAtStartup) this.unscheduleJobs();
     this.httpPort = port;
     try {
       for (const db of this._dbs) { await db.init(); }
@@ -185,7 +184,7 @@ export class Server {
           ok();
         });
       });
-      if (!skipJobSchedules) {
+      if (!this.options.skipJobScheduleAtStartup) {
         await this.scheduleJobs();
       }
     
