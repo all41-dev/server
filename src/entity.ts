@@ -63,18 +63,18 @@ export abstract class Entity<T1 extends Model<T1>, T2> {
     await this.preDelete(id).then(async (): Promise<number> => this.dbDestroy(options));
   }
 
-  public abstract async dbToClient(dbObj: T1): Promise<T2>;
-  public abstract async clientToDb(clientObj: T2): Promise<T1>;
+  public abstract dbToClient(dbObj: T1): Promise<T2>;
+  public abstract clientToDb(clientObj: T2): Promise<T1>;
   public abstract setFilter(opt: any): void;
-  public abstract async preCreation(obj: T2): Promise<T2>;
-  public abstract async preUpdate(obj: T2): Promise<T2>;
-  public abstract async preDelete(id: number|string): Promise<number>;
-  public abstract async postCreation(obj: T1): Promise<T1>;
+  public abstract preCreation(obj: T2): Promise<T2>;
+  public abstract preUpdate(obj: T2): Promise<T2>;
+  public abstract preDelete(id: number|string): Promise<number>;
+  public abstract postCreation(obj: T1): Promise<T1>;
   public abstract setIncludes(includePaths: string[]): void;
   // public abstract get model(): Model<Instance<T1>, T1>;
 
-  protected abstract async dbFindAll(options: FindOptions): Promise<T1[]>;
-  protected abstract async dbFindByPk(pk: any): Promise<T1|null>;
-  protected abstract async dbDestroy(options: DestroyOptions): Promise<number>;
+  protected abstract dbFindAll(options: FindOptions): Promise<T1[]>;
+  protected abstract dbFindByPk(pk: any): Promise<T1|null>;
+  protected abstract dbDestroy(options: DestroyOptions): Promise<number>;
 
 }

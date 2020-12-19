@@ -128,7 +128,7 @@ export class Server {
     if (!this.http) {
       throw new Error('http server not started');
     }
-    await new Promise((ok): void => {
+    await new Promise<void>((ok): void => {
       this.http.close((): void => {
         Server.logger.info({
           message: `server stopped on ${os.hostname}`,
@@ -146,7 +146,7 @@ export class Server {
     }
     Server.logger.info('restarting server');
     await this.stop();
-    await new Promise((ok): void => {
+    await new Promise<void>((ok): void => {
       this._app.listen(this.httpPort, () => {
         Server.logger.info('Restart successful.')
         ok();
