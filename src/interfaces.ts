@@ -10,6 +10,7 @@ export interface IServerOptions {
   uis?: IUiOptions<Ui<any>> | IUiOptions<Ui<any>>[];
   dbs?: IDbOptions<Db<any>> | IDbOptions<Db<any>>[];
   jobs?: IJobOptions | IJobOptions[];
+  amqp?: IAmqpOptions[];
   statics?: IStaticRouteOptions | IStaticRouteOptions[];
   loggerOptions?: LoggerOptions;
   skipJobScheduleAtStartup?: boolean;
@@ -39,6 +40,10 @@ export interface IUiOptions<T extends Ui<any>> extends IRouteOptions {
   config?: any;
   requireAuth?: boolean;
   requireScope?: string[];
+}
+
+export interface IAmqpOptions {
+  url: string;
 }
 
 export interface IStaticRouteOptions extends IRouteOptions {
