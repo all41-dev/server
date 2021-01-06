@@ -160,7 +160,7 @@ export abstract class ControllerBase {
     return this;
   }
 
-  public render(res: Response, view: string, options?: object): void {
+  public render(res: Response, view: string, options?: any): void {
     res.locals.BASE_URL = '/';
     res.locals.scripts = this.scripts;
     res.locals.title = this.title;

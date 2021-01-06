@@ -311,7 +311,6 @@ export class Server {
       (req: any, _res: any, next: any) => {
         if ( req.token) {
           req.session.openidTokens = JwtDecode(req.token);
-          // eslint-disable-next-line @typescript-eslint/camelcase
           req.session.openidTokens.id_token = req.token;
         }
         next();
@@ -327,7 +326,6 @@ export class Server {
         } catch (err) {
           next(err);
         }
-        // eslint-disable-next-line @typescript-eslint/camelcase
         tokenSet.refresh_token = req.openid.tokens.refresh_token;
         req.openid.tokens = tokenSet;
       }
