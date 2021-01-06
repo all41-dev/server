@@ -6,7 +6,6 @@ module.exports = {
       "@typescript-eslint/indent": ["warn", 2],
       "no-console": "error",
       "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/interface-name-prefix": ["error", "always"],
       "@typescript-eslint/no-var-requires": "off",
       "@typescript-eslint/member-ordering": "error",
     },
