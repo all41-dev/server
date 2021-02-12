@@ -7,11 +7,11 @@ import { ControllerBase } from './controller-base';
 // tslint:disable-next-line:no-var-requires
 const hist = require('connect-history-api-fallback');
 
-export abstract class Ui<T extends Ui<any>> {
+export abstract class Ui<T extends Ui<T>> {
 
   public static inst: Ui<any>;
   public router: express.Router;
-  // protected indexHtml!: string;
+  protected indexHtml!: string;
   protected _options: IUiOptions<Ui<T>>;
 
   public constructor(options: IUiOptions<Ui<T>>) {
