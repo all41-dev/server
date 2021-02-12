@@ -7,7 +7,7 @@ import { ControllerBase } from './controller-base';
 // tslint:disable-next-line:no-var-requires
 const hist = require('connect-history-api-fallback');
 
-export abstract class Ui<T extends Ui<T>> {
+export abstract class Ui<T extends Ui<any>> {
 
   public static inst: Ui<any>;
   public router: express.Router;
