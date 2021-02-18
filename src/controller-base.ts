@@ -160,6 +160,7 @@ export abstract class ControllerBase {
     return this;
   }
 
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   public render(res: Response, view: string, options?: any): void {
     res.locals.BASE_URL = '/';
     res.locals.scripts = this.scripts;

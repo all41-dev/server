@@ -1,5 +1,4 @@
 import { Server } from "./server";
-import { LogEntry } from "winston";
 
 const server = new Server({
   statics: {

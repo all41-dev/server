@@ -7,6 +7,7 @@ export abstract class Entity<T1 extends Model<T1>, T2> {
 
   public constructor(dbType: new(t1?: T1) => T1) { this._dbType = dbType; }
 
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected static copyProps<T3>(from: any, to: Partial<T3>, props: (keyof T3)[]): Partial<T3> {
     for (const pid in props) {
       const pName = props[pid];
@@ -65,6 +66,7 @@ export abstract class Entity<T1 extends Model<T1>, T2> {
 
   public abstract dbToClient(dbObj: T1): Promise<T2>;
   public abstract clientToDb(clientObj: T2): Promise<T1>;
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   public abstract setFilter(opt: any): void;
   public abstract preCreation(obj: T2): Promise<T2>;
   public abstract preUpdate(obj: T2): Promise<T2>;
@@ -74,6 +76,7 @@ export abstract class Entity<T1 extends Model<T1>, T2> {
   // public abstract get model(): Model<Instance<T1>, T1>;
 
   protected abstract dbFindAll(options: FindOptions): Promise<T1[]>;
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected abstract dbFindByPk(pk: any): Promise<T1|null>;
   protected abstract dbDestroy(options: DestroyOptions): Promise<number>;
 

@@ -8,7 +8,7 @@ args.ENV_FILE_PATH ?
 import express, { Router } from 'express';
 import * as http from 'http';
 import { IApiOptions, IJobOptions, IServerOptions, IUiOptions, IAuthOptions, IStaticRouteOptions } from './interfaces';
-import { CronJob, job } from 'cron';
+import { CronJob } from 'cron';
 import winston from 'winston';
 import { Db, IDbOptions } from '@all41-dev/db-tools';
 import { auth, requiresAuth } from "express-openid-connect";
@@ -18,7 +18,6 @@ import JwtDecode from "jwt-decode";
 import { Api } from './api';
 import { Ui } from './ui';
 import os from 'os';
-import { ok } from 'assert';
 
 const memoryStore = require('memorystore')(session);
 /**
@@ -124,7 +123,7 @@ export class Server {
     }
   }
 
-  public async stop(killProcess: boolean = true): Promise<void> {
+  public async stop(killProcess = true): Promise<void> {
     if (!this.http) {
       throw new Error('http server not started');
     }
