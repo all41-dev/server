@@ -124,7 +124,7 @@ export class Server {
     }
   }
 
-  public async stop(): Promise<void> {
+  public async stop(killProcess: boolean = true): Promise<void> {
     if (!this.http) {
       throw new Error('http server not started');
     }
@@ -137,7 +137,8 @@ export class Server {
         ok();
       });
     });
-    for(const job of this._jobs) { job.instance.stop(); }
+    for (const job of this._jobs) { job.instance.stop(); }
+    if (killProcess) process.exit(0);
   }
   public async restart(): Promise<void> {
 
@@ -145,7 +146,7 @@ export class Server {
       throw new Error('http server not started');
     }
     Server.logger.info('restarting server');
-    await this.stop();
+    await this.stop(false);
     await new Promise<void>((ok): void => {
       this._app.listen(this.httpPort, () => {
         Server.logger.info('Restart successful.')

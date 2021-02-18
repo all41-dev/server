@@ -4,6 +4,7 @@ import chaiHttp from 'chai-http';
 import { Api } from '../src/api';
 import { Router } from 'express';
 import { ControllerBase } from '../src/controller-base';
+import { Db } from '@all41-dev/db-tools';
 import { Table, Model, PrimaryKey, AutoIncrement, Column, AllowNull, Unique, DataType } from 'sequelize-typescript';
 chai.use(chaiHttp);
 
@@ -19,7 +20,7 @@ export class TestApi extends Api<TestApi> {
 }
 
 @Table({ modelName: 'person', tableName: 'person', timestamps: false })
-export class DbPerson extends Model<DbPerson> {
+export class DbPerson extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column(DataType.INTEGER)
@@ -47,7 +48,6 @@ export class TestController extends ControllerBase {
     
     return router;
   }
-    
 }
 
 describe('Server class', () => {
@@ -90,5 +90,37 @@ describe('Server class', () => {
           })
         })
     );
+  }).timeout(0);
+  it('stop', (done) => {
+    process.env.HTTP_PORT = '1234';
+    const server = new Server({
+      apis: [{
+        baseRoute: '/test',
+        type: TestApi,
+        requireAuth: false,
+      }]
+    })
+    server.start().then(() =>
+      // error http://localhost/test/api don't respond
+      server.stop().then(() => {
+        done("Process should have ended at this stage");
+      }));
+  }).timeout(0);
+  it('multi restart', (done) => {
+    process.env.HTTP_PORT = '1234';
+    const server = new Server({
+      apis: [{
+        baseRoute: '/test',
+        type: TestApi,
+        requireAuth: false,
+      }]
+    });
+    server.start().then(() =>
+      // error http://localhost/test/api don't respond
+      server.restart().then(() => {
+        server.restart().then(() => {
+          done();
+        })
+      }));
   }).timeout(0);
 });
