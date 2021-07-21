@@ -118,7 +118,8 @@ export class Server {
     } catch (error) {
       Server.logger.log('crit', error, {
         title: 'error while building all41 server',
-        body: 'exception thrown in all41.server.Server constructor\nServer is stopped'
+        body: 'exception thrown in all41.server.Server constructor\nServer is stopped',
+        options,
       })
     }
   }
@@ -190,9 +191,11 @@ export class Server {
     
       Server.logger.info(`Server started on ${os.hostname}`);
     } catch (error) {
-      Server.logger.log('crit', error, {
+      Server.logger.log('crit', error.message, {
+        error,
         title: 'error while starting all41 server',
-        body: 'exception thrown in all41.server.Server.start()\nServer is stopped'
+        body: 'exception thrown in all41.server.Server.start()\nServer is stopped',
+        server: this,
       })
     }
   }
