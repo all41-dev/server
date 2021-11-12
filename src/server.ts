@@ -247,8 +247,8 @@ export class Server {
   }
   public isJobScheduled(code: string): boolean {
     const job = this._jobs.find((j) => j.code === code);
-    if (!job) throw new Error(`job '${code}' not found`);
-    return job.isScheduled || false;
+    // if (!job) throw new Error(`job '${code}' not found`);
+    return !!job?.isScheduled || false;
   }
   public isJobRunning(code: string): boolean {
     const job = this._jobs.find((j) => j.code === code);
