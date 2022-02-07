@@ -41,12 +41,6 @@ export class Server {
   }[] = [];
   protected readonly _dbs: Db<any>[] = [];
 
-  public get app(): express.Application {
-    return this._app;
-  }
-
-  public static get logger(): winston.Logger { return Server._logger;}
-
   public constructor(options: IServerOptions) {
     this.options = options;
     try {
@@ -63,7 +57,7 @@ export class Server {
             winston.format.colorize(),
             winston.format.timestamp(),
             winston.format.printf(ev => `${ev.timestamp}> ${ev.level}: ${ev.message}`),
-          // winston.format.errors(),
+            // winston.format.errors(),
           ), level: options.consoleLogLevel || options.loggerOptions.level || 'debug',
         }));
       }
@@ -75,7 +69,7 @@ export class Server {
         for (const db of dbArray) { this._registerDb(db); }
       }
 
-      if(options.auth) {
+      if (options.auth) {
         this._registerAuth(options.auth);
       }
 
@@ -123,6 +117,12 @@ export class Server {
         options,
       })
     }
+  }
+
+  public static get logger(): winston.Logger { return Server._logger; }
+
+  public get app(): express.Application {
+    return this._app;
   }
 
   public async stop(killProcess = true): Promise<void> {
