@@ -116,7 +116,8 @@ export class Server {
         for (const job of jobArray) { this._registerJob(job); }
       }
     } catch (error) {
-      Server.logger.log('crit', error, {
+      Server.logger.log('crit', (error as Error).message, {
+        error: error,
         title: 'error while building all41 server',
         body: 'exception thrown in all41.server.Server constructor\nServer is stopped',
         options,
@@ -191,7 +192,7 @@ export class Server {
     
       Server.logger.info(`Server started on ${os.hostname}`);
     } catch (error) {
-      Server.logger.log('crit', error.message, {
+      Server.logger.log('crit', (error as Error).message, {
         error,
         title: 'error while starting all41 server',
         body: 'exception thrown in all41.server.Server.start()\nServer is stopped',
