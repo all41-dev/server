@@ -22,7 +22,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@all41-dev/db-tools": "^1.1.0",
+    "@all41-dev/db-tools": "^1.1.1",
     "bluebird": "^3.7.2",
     "connect-history-api-fallback": "^1.6.0",
     "cron": "^1.8.2",
