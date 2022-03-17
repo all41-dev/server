@@ -63,9 +63,13 @@ describe('Server class', () => {
     server.start().then(() =>
     // error http://localhost/test/api don't respond
       chai.request(server.app).get('/test/api')
-        .then((res) => {
+        .then((res: Response) => {
           chai.expect(res.text).to.eql('Hello All41!');
-          server.stop().then(() => done());
+          return server.stop(true).then(() => {
+            done();
+          }).catch((err) => {
+            done(err);
+          });
         })
     );
   }).timeout(0);
