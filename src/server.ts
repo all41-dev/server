@@ -27,7 +27,6 @@ export class Server {
   private static _logger: winston.Logger;
 
   public http!: http.Server;
-  public httpPort?: number;
 
   // public sequelize!: Sequelize.Sequelize;
   protected options: IServerOptions;
@@ -78,6 +77,7 @@ export class Server {
         const uiArray = Array.isArray(options.uis) ? options.uis : [options.uis];
 
         for (const ui of uiArray) {
+          if (this.options.mute) ui.mute = true;
           if (!options.auth) { ui.requireAuth = false; }
           this._registerUi(ui);
         }
@@ -88,6 +88,7 @@ export class Server {
         const apiArray = Array.isArray(options.apis) ? options.apis : [options.apis];
 
         for (const api of apiArray) {
+          if (this.options.mute) api.mute = true;
           if (!options.auth) { api.requireAuth = false; }
           this._registerApi(api);
         }
@@ -98,6 +99,7 @@ export class Server {
         const staticArray = Array.isArray(options.statics) ? options.statics : [options.statics];
 
         for (const stat of staticArray) {
+          if (this.options.mute) stat.mute = true;
           if (!options.auth) { stat.requireAuth = false; }
           this._registerStatic(stat);
         }
@@ -107,7 +109,10 @@ export class Server {
       if (options.jobs) {
         const jobArray = Array.isArray(options.jobs) ? options.jobs : [options.jobs];
 
-        for (const job of jobArray) { this._registerJob(job); }
+        for (const job of jobArray) {
+          if (this.options.mute) job.mute = true;
+          this._registerJob(job);
+        }
       }
     } catch (error) {
       Server.logger.log('crit', (error as Error).message, {
@@ -121,6 +126,7 @@ export class Server {
 
   public static get logger(): winston.Logger { return Server._logger; }
 
+  public get httpPort(): number | undefined { return this.options.httpPort; }
   public get app(): express.Application {
     return this._app;
   }
@@ -156,7 +162,7 @@ export class Server {
     });
     for(const job of this._jobs) { job.instance.stop(); }
   }
-  public async start(port = 8080, mute = false): Promise<void> {
+  public async start(): Promise<void> {
     this.httpPort = port;
     try {
       for (const db of this._dbs) { await db.init(); }
