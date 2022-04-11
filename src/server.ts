@@ -189,10 +189,12 @@ export class Server {
         });
       });
       if (!this.options.skipJobScheduleAtStartup) {
-        await this.scheduleJobs();
+        await this.scheduleJobs(mute);
       }
     
-      Server.logger.info(`Server started on ${os.hostname}`);
+      if (!mute) {
+        Server.logger.info(`Server started on ${os.hostname}`);
+      }
     } catch (error) {
       Server.logger.log('crit', (error as Error).message, {
         error,
