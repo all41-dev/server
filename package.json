@@ -1,6 +1,6 @@
 {
   "name": "@all41-dev/server",
-  "version": "1.15.0",
+  "version": "1.15.1",
   "description": "",
   "main": "./dist/index.js",
   "types": "dist/index.d.ts",
