@@ -65,7 +65,10 @@ export class Server {
       if (options.dbs) {
         const dbArray = Array.isArray(options.dbs) ? options.dbs : [options.dbs];
 
-        for (const db of dbArray) { this._registerDb(db); }
+        for (const db of dbArray) {
+          if (this.options.mute) db.mute = true;
+          this._registerDb(db);
+        }
       }
 
       if (options.auth) {
@@ -310,10 +313,12 @@ export class Server {
       context: jobOpt.context,
     }), code: jobOpt.name, isScheduled: false, options: { execOnStart: jobOpt.executeOnStart }
     });
-    Server.logger.info({
-      message: `Job ${jobOpt.name} referenced on ${os.hostname}.`,
-      hash: 'job-state',
-    });
+    if (!jobOpt.mute) {
+      Server.logger.info({
+        message: `Job ${jobOpt.name} referenced on ${os.hostname}.`,
+        hash: 'job-state',
+      });
+    }
   }
 
   protected _registerAuth(authOptions: IAuthOptions): void {
