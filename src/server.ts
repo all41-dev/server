@@ -156,7 +156,7 @@ export class Server {
     });
     for(const job of this._jobs) { job.instance.stop(); }
   }
-  public async start(port = 8080): Promise<void> {
+  public async start(port = 8080, mute = false): Promise<void> {
     this.httpPort = port;
     try {
       for (const db of this._dbs) { await db.init(); }
@@ -179,10 +179,12 @@ export class Server {
         }
   
         this.http = this._app.listen(this.httpPort, (): void => {
-          Server.logger.info({
-            message: `${os.hostname} Api listening on port ${port}!`,
-            hash: 'api-state',
-          });
+          if (!mute) {
+            Server.logger.info({
+              message: `${os.hostname} App listening on port ${port}`,
+              hash: 'api-state',
+            });
+          }
           ok();
         });
       });
@@ -201,14 +203,18 @@ export class Server {
     }
   }
 
-  public scheduleJobs(): void {
+  public scheduleJobs(mute = false): void {
     for(const job of this._jobs) { 
       job.instance.start();
       job.isScheduled = true;
-      Server.logger.info(`job ${job.code} scheduled`);
+      if (!mute) {
+        Server.logger.info(`job ${job.code} scheduled`);
+      }
       if (job.options.execOnStart) {
         job.instance.fireOnTick();
-        Server.logger.info(`job ${job.code} execution started`);
+        if (!mute) {
+          Server.logger.info(`job ${job.code} execution started`);
+        }
       }
     }
   }

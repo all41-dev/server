@@ -11,6 +11,9 @@ const server = new Server({
     // defaultMeta: ['test', 'all41ServerApp', `${os.hostname}Host`],
     defaultMeta: { foo: 'fooBar' },
   },
+  amqp: [
+    { url: 'amqps://foo/bar' }
+  ],
   skipJobScheduleAtStartup: process.env.SKIP_JOBS === 'true',
 });
 // eslint-disable-next-line no-console
