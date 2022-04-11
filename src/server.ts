@@ -163,7 +163,6 @@ export class Server {
     for(const job of this._jobs) { job.instance.stop(); }
   }
   public async start(): Promise<void> {
-    this.httpPort = port;
     try {
       for (const db of this._dbs) { await db.init(); }
       await new Promise<void>((ok): void => {
@@ -185,9 +184,9 @@ export class Server {
         }
   
         this.http = this._app.listen(this.httpPort, (): void => {
-          if (!mute) {
+          if (!this.options.mute) {
             Server.logger.info({
-              message: `${os.hostname} App listening on port ${port}`,
+              message: `${os.hostname} App listening on port ${this.options.httpPort}`,
               hash: 'api-state',
             });
           }
@@ -195,10 +194,10 @@ export class Server {
         });
       });
       if (!this.options.skipJobScheduleAtStartup) {
-        await this.scheduleJobs(mute);
+        await this.scheduleJobs(this.options.mute);
       }
     
-      if (!mute) {
+      if (!this.options.mute) {
         Server.logger.info(`Server started on ${os.hostname}`);
       }
     } catch (error) {
