@@ -1,4 +1,5 @@
 import minimist from 'minimist';
+import AMQP from "amqplib";
 const args = minimist(process.argv.slice(2));
 // eslint-disable-next-line no-console
 if (args.ENV_FILE_PATH) console.info(`Using config file: ${args.ENV_FILE_PATH}`);
@@ -7,7 +8,15 @@ args.ENV_FILE_PATH ?
   require('dotenv').config();
 import express, { Router } from 'express';
 import * as http from 'http';
-import { IApiOptions, IJobOptions, IServerOptions, IUiOptions, IAuthOptions, IStaticRouteOptions } from './interfaces';
+import {
+  IApiOptions,
+  IJobOptions,
+  IServerOptions,
+  IUiOptions,
+  IAuthOptions,
+  IStaticRouteOptions,
+  IAmqpOptions
+} from './interfaces';
 import { CronJob } from 'cron';
 import winston from 'winston';
 import { Db, IDbOptions } from '@all41-dev/db-tools';
@@ -19,12 +28,18 @@ import { Api } from './api';
 import { Ui } from './ui';
 import os from 'os';
 
+function sleep(ms : number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 const memoryStore = require('memorystore')(session);
 /**
  * @description hosts all microservice functionalities
  */
 export class Server {
   private static _logger: winston.Logger;
+
+  private static amqpTypes = ["fanout", "direct", "topic", "headers"];
 
   public http!: http.Server;
   public httpPort?: number;
@@ -40,6 +55,7 @@ export class Server {
     options: {execOnStart: boolean};
   }[] = [];
   protected readonly _dbs: Db<any>[] = [];
+  protected readonly _amqp: {[key : string] : IAmqpOptions} = {};
 
   public constructor(options: IServerOptions) {
     this.options = options;
@@ -109,6 +125,12 @@ export class Server {
 
         for (const job of jobArray) { this._registerJob(job); }
       }
+
+      // register amqp
+      if (options.amqp) {
+        this._amqp = options.amqp;
+      }
+
     } catch (error) {
       Server.logger.log('crit', (error as Error).message, {
         error: error,
@@ -172,12 +194,12 @@ export class Server {
           if (a.path.length < b.path.length) return 0;
           return 1;
         });
-      
+
         for (const route of sortedRoutes) {
           if (route.requireAuth) { this._app.use(route.path, requiresAuth(), route.router); }
           else { this._app.use(route.path, route.router); }
         }
-  
+
         this.http = this._app.listen(this.httpPort, (): void => {
           Server.logger.info({
             message: `${os.hostname} Api listening on port ${port}!`,
@@ -189,7 +211,7 @@ export class Server {
       if (!this.options.skipJobScheduleAtStartup) {
         await this.scheduleJobs();
       }
-    
+
       Server.logger.info(`Server started on ${os.hostname}`);
     } catch (error) {
       Server.logger.log('crit', (error as Error).message, {
@@ -202,7 +224,7 @@ export class Server {
   }
 
   public scheduleJobs(): void {
-    for(const job of this._jobs) { 
+    for(const job of this._jobs) {
       job.instance.start();
       job.isScheduled = true;
       Server.logger.info(`job ${job.code} scheduled`);
@@ -214,7 +236,7 @@ export class Server {
   }
 
   public unscheduleJobs(): void {
-    for(const job of this._jobs) { 
+    for(const job of this._jobs) {
       job.instance.stop();
       job.isScheduled = false;
       Server.logger.info(`job ${job.code} unscheduled`);
@@ -257,11 +279,213 @@ export class Server {
     return job.instance.running || false;
   }
 
+  public getAmqpUrl(id : string) : string {
+    if(!this._amqp) throw new Error('amqp not initialized');
+    if(!this._amqp[id]) throw new Error(`amqp '${id}' not found`);
+    return this._amqp[id].AMQP_URL;
+  }
+
+  public getAmqpChannelNames(id : string) : string[] {
+    if(!this._amqp) throw new Error('amqp not initialized');
+    if(!this._amqp[id]) throw new Error(`amqp '${id}' not found`);
+    return Object.keys(this._amqp[id].channels);
+  }
+
+  public amqpConnect(id : string) : Promise<void> {
+    return new Promise(async(resolve, reject) => {
+      try {
+        this._amqp[id].connection = await AMQP.connect(this._amqp[id].AMQP_URL);
+        resolve();
+      } catch (error) {
+        throw error;
+      }
+    });
+  }
+
+  async amqpDisconnect(id : string) : Promise<void> {
+    return new Promise(async(resolve, reject) => {
+      if (!this._amqp[id]) {
+        throw new Error(`amqp '${id}' not found`);
+      }
+      if (this._amqp[id].connection) {
+        try {
+          await this._amqp[id].connection!.close();
+          resolve();
+        } catch (error) {
+          throw error;
+        }
+      }
+    });
+  }
+
+  async amqpCreateChannel(id : string, name: string) : Promise<void> {
+    return new Promise(async(resolve, reject) => {
+      if (!this._amqp[id]) {
+        throw new Error(`amqp '${id}' not found`);
+      }
+
+      if (!this._amqp[id].connection) {
+        throw new Error("No connection");
+      }
+
+      if (this._amqp[id].channels[name]) {
+        return this._amqp[id].channels[name];
+      }
+
+      try {
+        const channel = await this._amqp[id].connection!.createChannel();
+        this._amqp[id].channels[name] = channel;
+        resolve();
+      } catch (error) {
+        throw error;
+      }
+    });
+  }
+
+  async amqpDeleteChannel(id : string, name: string) : Promise<void> {
+    return new Promise(async (resolve, reject) => {
+      if (!this._amqp[id].connection) {
+        throw new Error("No connection");
+      }
+
+      if (!this._amqp[id].channels[name]) {
+        return;
+      }
+
+      try {
+        await this._amqp[id].channels[name].close();
+        delete this._amqp[id].channels[name];
+        resolve();
+      } catch (error) {
+        throw error;
+      }
+    });
+  }
+
+  async amqpCreateExchange(id : string, channel: string, name: string, type: string) : Promise<void> {
+    return new Promise(async (resolve, reject) => {
+      if (!this._amqp[id].connection) {
+        throw new Error("No connection");
+      }
+
+      if (!this._amqp[id].channels[channel]) {
+        throw new Error("No channel");
+      }
+
+      if (!Server.amqpTypes.includes(type)) {
+        throw new Error("Invalid type");
+      }
+
+      try {
+        await this._amqp[id].channels[channel].assertExchange(name, type, { durable: false });
+        resolve();
+      } catch (error) {
+        throw error;
+      }
+    });
+  }
+
+  async amqpDeleteExchange(id : string, name: string) : Promise<void> {
+    return new Promise(async (resolve, reject) => {
+      if (!this._amqp[id].connection) {
+        throw new Error("No connection");
+      }
+
+      if (!this._amqp[id].channels[name]) {
+        throw new Error("No channel");
+      }
+
+      try {
+        await this._amqp[id].channels[name].deleteExchange(name);
+        resolve();
+      } catch (error) {
+        throw error;
+      }
+    });
+  }
+
+  async amqpCreateQueue(id : string, channel: string, name: string, exchange: string, pattern?: string) : Promise<void> {
+    return new Promise(async (resolve, reject) => {
+      if (!this._amqp[id].channels[channel]) {
+        throw new Error("No channel");
+      }
+      try {
+        await this._amqp[id].channels[channel].assertQueue(name, { durable: false });
+      } catch (error) {
+        throw error;
+      }
+      try {
+        if (pattern != null) {
+          await this._amqp[id].channels[channel].bindQueue(name, exchange, pattern);
+        } else {
+          await this._amqp[id].channels[channel].bindQueue(name, exchange, "");
+        }
+        resolve();
+      } catch (error) {
+        throw error;
+      }
+    });
+  }
+
+  async amqpDeleteQueue(id : string, channel: string, name: string) : Promise<void> {
+    return new Promise(async (resolve, reject) => {
+      if (!this._amqp[id].channels[channel]) {
+        throw new Error("No channel");
+      }
+      try {
+        await this._amqp[id].channels[channel].deleteQueue(name);
+        resolve();
+      } catch (error) {
+        throw error;
+      }
+    });
+  }
+
+  async amqpSend(id : string, channel: string, exchange : string, routingKey: string, message: string) : Promise<void> {
+    return new Promise(async (resolve, reject) => {
+      if (!this._amqp[id].channels[channel]) {
+        throw new Error("No channel");
+      }
+      try {
+        this._amqp[id].channels[channel].publish(exchange, routingKey, Buffer.from(message));
+        resolve();
+      } catch (error) {
+        throw error;
+      }
+    });
+  }
+
+  async amqpReceive(id : string, channel: string, queue: string, onMessage : any, maxNumber? : number) : Promise<string> {
+    return new Promise(async (resolve) => {
+      if (!this._amqp[id].channels[channel]) {
+        throw new Error("No channel");
+      }
+      try {
+        if (maxNumber) {
+          await this._amqp[id].channels[channel].prefetch(maxNumber);
+        }
+        await this._amqp[id].channels[channel].consume(queue, onMessage, { noAck: false });
+      } catch (error) {
+        throw error;
+      }
+    });
+  }
+
+  async amqpGetChannel(id : string, channel: string) : Promise<any> {
+    return new Promise(async (resolve) => {
+      if (!this._amqp[id].channels[channel]) {
+        throw new Error("No channel");
+      }
+      resolve(this._amqp[id].channels[channel]);
+    });
+  }
+
+
   protected _registerStatic(staticOptions: IStaticRouteOptions): void {
     const router = Router();
 
     router.use('/', express.static(staticOptions.ressourcePath));
-    
+
     this._routes.push({
       router: router,
       path: staticOptions.baseRoute,
@@ -307,7 +531,7 @@ export class Server {
     this._app.use(
       session({
         secret: "should this be set?",
-        resave: true, 
+        resave: true,
         saveUninitialized: false,
         store: new memoryStore({checkPeriod: 86400000}),
       }),

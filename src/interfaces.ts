@@ -2,6 +2,7 @@ import { Api } from './api';
 import { Db, IDbOptions } from '@all41-dev/db-tools';
 import { Ui } from './ui';
 import { LoggerOptions } from 'winston';
+import AMQP from 'amqplib';
 
 export interface IServerOptions {
   consoleLogLevel?: string;
@@ -10,7 +11,7 @@ export interface IServerOptions {
   uis?: IUiOptions<Ui<any>> | IUiOptions<Ui<any>>[];
   dbs?: IDbOptions<Db<any>> | IDbOptions<Db<any>>[];
   jobs?: IJobOptions | IJobOptions[];
-  amqp?: IAmqpOptions[];
+  amqp?: {[key: string]: IAmqpOptions};
   statics?: IStaticRouteOptions | IStaticRouteOptions[];
   loggerOptions?: LoggerOptions;
   skipJobScheduleAtStartup?: boolean;
@@ -43,7 +44,9 @@ export interface IUiOptions<T extends Ui<any>> extends IRouteOptions {
 }
 
 export interface IAmqpOptions {
-  url: string;
+  AMQP_URL: string | "amqp://localhost";
+  connection: AMQP.Connection | undefined;
+  channels: { [key: string]: AMQP.Channel };
 }
 
 export interface IStaticRouteOptions extends IRouteOptions {
