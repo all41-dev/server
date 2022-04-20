@@ -8,7 +8,7 @@ args.ENV_FILE_PATH ?
   require('dotenv').config();
 import express, { Router } from 'express';
 import * as http from 'http';
-import { IApiOptions, IJobOptions, IServerOptions, IUiOptions, IAuthOptions, IStaticRouteOptions } from './interfaces';
+import { IApiOptions, IJobOptions, IServerOptions, IUiOptions, IAuthOptions, IStaticRouteOptions, IAmqpOptions } from './interfaces';
 import { CronJob } from 'cron';
 import winston from 'winston';
 import { Db, IDbOptions } from '@all41-dev/db-tools';
