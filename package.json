@@ -1,6 +1,6 @@
 {
   "name": "@all41-dev/server",
-  "version": "1.15.3",
+  "version": "1.16.0",
   "description": "",
   "main": "./dist/index.js",
   "types": "dist/index.d.ts",
@@ -24,6 +24,7 @@
   "dependencies": {
     "@all41-dev/db-tools": "^1.2.0",
     "@all41-dev/log": "^1.1.5",
+    "amqplib": "^0.8.0",
     "bluebird": "^3.7.2",
     "connect-history-api-fallback": "^1.6.0",
     "cors": "^2.8.5",
@@ -46,6 +47,7 @@
     "xmlhttprequest": "^1.8.0"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.8.2",
     "@types/bluebird": "^3.5.33",
     "@types/chai": "^4.3.0",
     "@types/cors": "^2.8.12",
