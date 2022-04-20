@@ -15,9 +15,11 @@ export interface IServerOptions {
   statics?: IStaticRouteOptions | IStaticRouteOptions[];
   loggerOptions?: LoggerOptions;
   skipJobScheduleAtStartup?: boolean;
+  mute?: boolean;
+  httpPort?: number;
 }
 
-export interface IRouteOptions {
+export interface IRouteOptions extends IMuteable {
   baseRoute: string;
 }
 
@@ -27,7 +29,7 @@ export interface IApiOptions<T extends Api<any>> extends IRouteOptions {
   requireAuth?: boolean;
 }
 
-export interface IJobOptions {
+export interface IJobOptions extends IMuteable {
   schedule: string;
   function: () => any;
   name: string;
@@ -43,7 +45,7 @@ export interface IUiOptions<T extends Ui<any>> extends IRouteOptions {
   requireScope?: string[];
 }
 
-export interface IAmqpOptions {
+export interface IAmqpOptions extends IMuteable {
   AMQP_URL: string | "amqp://localhost";
   connection: AMQP.Connection | undefined;
   channels: { [key: string]: AMQP.Channel };
@@ -68,6 +70,9 @@ export interface IAuthOptions {
   idpLogout: boolean;
 }
 
+export interface IMuteable {
+  mute?: boolean;
+}
 // export function applyMixins(derivedCtor: any, baseCtors: any[]): void {
 //   baseCtors.forEach((baseCtor): void => {
 //     Object.getOwnPropertyNames(baseCtor.prototype).forEach((name): void => {

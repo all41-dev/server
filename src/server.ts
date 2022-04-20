@@ -8,15 +8,7 @@ args.ENV_FILE_PATH ?
   require('dotenv').config();
 import express, { Router } from 'express';
 import * as http from 'http';
-import {
-  IApiOptions,
-  IJobOptions,
-  IServerOptions,
-  IUiOptions,
-  IAuthOptions,
-  IStaticRouteOptions,
-  IAmqpOptions
-} from './interfaces';
+import { IApiOptions, IJobOptions, IServerOptions, IUiOptions, IAuthOptions, IStaticRouteOptions } from './interfaces';
 import { CronJob } from 'cron';
 import winston from 'winston';
 import { Db, IDbOptions } from '@all41-dev/db-tools';
@@ -42,7 +34,6 @@ export class Server {
   private static amqpTypes = ["fanout", "direct", "topic", "headers"];
 
   public http!: http.Server;
-  public httpPort?: number;
 
   // public sequelize!: Sequelize.Sequelize;
   protected options: IServerOptions;
@@ -82,7 +73,10 @@ export class Server {
       if (options.dbs) {
         const dbArray = Array.isArray(options.dbs) ? options.dbs : [options.dbs];
 
-        for (const db of dbArray) { this._registerDb(db); }
+        for (const db of dbArray) {
+          if (this.options.mute) db.mute = true;
+          this._registerDb(db);
+        }
       }
 
       if (options.auth) {
@@ -94,6 +88,7 @@ export class Server {
         const uiArray = Array.isArray(options.uis) ? options.uis : [options.uis];
 
         for (const ui of uiArray) {
+          if (this.options.mute) ui.mute = true;
           if (!options.auth) { ui.requireAuth = false; }
           this._registerUi(ui);
         }
@@ -104,6 +99,7 @@ export class Server {
         const apiArray = Array.isArray(options.apis) ? options.apis : [options.apis];
 
         for (const api of apiArray) {
+          if (this.options.mute) api.mute = true;
           if (!options.auth) { api.requireAuth = false; }
           this._registerApi(api);
         }
@@ -114,6 +110,7 @@ export class Server {
         const staticArray = Array.isArray(options.statics) ? options.statics : [options.statics];
 
         for (const stat of staticArray) {
+          if (this.options.mute) stat.mute = true;
           if (!options.auth) { stat.requireAuth = false; }
           this._registerStatic(stat);
         }
@@ -123,7 +120,10 @@ export class Server {
       if (options.jobs) {
         const jobArray = Array.isArray(options.jobs) ? options.jobs : [options.jobs];
 
-        for (const job of jobArray) { this._registerJob(job); }
+        for (const job of jobArray) {
+          if (this.options.mute) job.mute = true;
+          this._registerJob(job);
+        }
       }
 
       // register amqp
@@ -143,6 +143,7 @@ export class Server {
 
   public static get logger(): winston.Logger { return Server._logger; }
 
+  public get httpPort(): number | undefined { return this.options.httpPort; }
   public get app(): express.Application {
     return this._app;
   }
@@ -178,8 +179,7 @@ export class Server {
     });
     for(const job of this._jobs) { job.instance.stop(); }
   }
-  public async start(port = 8080): Promise<void> {
-    this.httpPort = port;
+  public async start(): Promise<void> {
     try {
       for (const db of this._dbs) { await db.init(); }
       await new Promise<void>((ok): void => {
@@ -201,18 +201,22 @@ export class Server {
         }
 
         this.http = this._app.listen(this.httpPort, (): void => {
-          Server.logger.info({
-            message: `${os.hostname} Api listening on port ${port}!`,
-            hash: 'api-state',
-          });
+          if (!this.options.mute) {
+            Server.logger.info({
+              message: `${os.hostname} App listening on port ${this.options.httpPort}`,
+              hash: 'api-state',
+            });
+          }
           ok();
         });
       });
       if (!this.options.skipJobScheduleAtStartup) {
-        await this.scheduleJobs();
+        await this.scheduleJobs(this.options.mute);
       }
 
-      Server.logger.info(`Server started on ${os.hostname}`);
+      if (!this.options.mute) {
+        Server.logger.info(`Server started on ${os.hostname}`);
+      }
     } catch (error) {
       Server.logger.log('crit', (error as Error).message, {
         error,
@@ -223,14 +227,18 @@ export class Server {
     }
   }
 
-  public scheduleJobs(): void {
+  public scheduleJobs(mute = false): void {
     for(const job of this._jobs) {
       job.instance.start();
       job.isScheduled = true;
-      Server.logger.info(`job ${job.code} scheduled`);
+      if (!mute) {
+        Server.logger.info(`job ${job.code} scheduled`);
+      }
       if (job.options.execOnStart) {
         job.instance.fireOnTick();
-        Server.logger.info(`job ${job.code} execution started`);
+        if (!mute) {
+          Server.logger.info(`job ${job.code} execution started`);
+        }
       }
     }
   }
@@ -521,10 +529,12 @@ export class Server {
       context: jobOpt.context,
     }), code: jobOpt.name, isScheduled: false, options: { execOnStart: jobOpt.executeOnStart }
     });
-    Server.logger.info({
-      message: `Job ${jobOpt.name} referenced on ${os.hostname}.`,
-      hash: 'job-state',
-    });
+    if (!jobOpt.mute) {
+      Server.logger.info({
+        message: `Job ${jobOpt.name} referenced on ${os.hostname}.`,
+        hash: 'job-state',
+      });
+    }
   }
 
   protected _registerAuth(authOptions: IAuthOptions): void {
