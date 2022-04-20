@@ -1,11 +1,12 @@
 import { Server } from '../src/server';
-import chai from 'chai';
-import chaiHttp from 'chai-http';
+import * as chai from 'chai';
+// import chaiHttp from 'chai-http';
 import { Api } from '../src/api';
 import { Router } from 'express';
 import { ControllerBase } from '../src/controller-base';
 import { Db } from '@all41-dev/db-tools';
 import { Table, Model, PrimaryKey, AutoIncrement, Column, AllowNull, Unique, DataType } from 'sequelize-typescript';
+import chaiHttp = require('chai-http');
 chai.use(chaiHttp);
 
 export class TestApi extends Api<TestApi> {
@@ -61,11 +62,11 @@ describe('Server class', () => {
       }]
     })
     server.start().then(() =>
-    // error http://localhost/test/api don't respond
+      // error http://localhost/test/api don't respond
       chai.request(server.app).get('/test/api')
-        .then((res: Response) => {
+        .then((res: any) => {
           chai.expect(res.text).to.eql('Hello All41!');
-          return server.stop(true).then(() => {
+          server.stop(true).then(() => {
             done();
           }).catch((err) => {
             done(err);
