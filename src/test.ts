@@ -15,9 +15,6 @@ const server = new Server({
     // defaultMeta: ['test', 'all41ServerApp', `${os.hostname}Host`],
     defaultMeta: { foo: 'fooBar' },
   },
-  amqp: [
-    { url: 'amqps://foo/bar' }
-  ],
   skipJobScheduleAtStartup: process.env.SKIP_JOBS === 'true',
   httpPort: port,
   mute: true,
@@ -32,7 +29,7 @@ server.start().then(() => {
       server.start();
       Server.logger.debug('Server restart ended');
     }, 5000);
-    
+
   })
 })
 // Server.logger.error(new Error('Error from test'));
