@@ -7,6 +7,7 @@ import { ControllerBase } from '../src/controller-base';
 import { Db } from '@all41-dev/db-tools';
 import { Table, Model, PrimaryKey, AutoIncrement, Column, AllowNull, Unique, DataType } from 'sequelize-typescript';
 import chaiHttp = require('chai-http');
+import AMQP from "amqplib";
 chai.use(chaiHttp);
 
 export class TestApi extends Api<TestApi> {
@@ -35,18 +36,18 @@ export class DbPerson extends Model {
 
 export class TestDb extends Db<TestDb> {
   public async init(): Promise<void> {
-    await this._init();
+    this._init();
     this.sequelize.addModels([DbPerson]);
   }
-  
+
 }
 
 export class TestController extends ControllerBase {
   public static create(): Router {
     const router = Router();
-    
+
     router.get('/', (req, res) => res.send('Hello All41!'));
-    
+
     return router;
   }
 }
@@ -128,4 +129,237 @@ describe('Server class', () => {
         })
       }));
   }).timeout(0);
+});
+
+describe("AMQPMethods", async () => {
+  let server : Server;
+
+  beforeEach(() => {
+    server = new Server({
+      amqp: {'local': {
+        AMQP_URL: 'amqp://ops_server:ops_server_pass@localhost',
+        connection: undefined,
+        channels: {},
+      }},
+    });
+    server.start();
+  });
+
+  after(() => {
+    server.stop();
+  });
+
+  it("Connection",() => {
+    server.amqpConnect('local');
+  }).timeout(0);
+
+  it("Disconnect",() => {
+    server.amqpConnect('local');
+    server.amqpDisconnect('local');
+  }).timeout(0);
+
+  it("Connect to unknown id",() => {
+    try {
+      server.amqpConnect('unknown');
+      chai.assert(false);
+    } catch (e) {
+      chai.assert(true);
+    }
+  }).timeout(0);
+
+  it("Disconnect from unknown id", () => {
+    try {
+      server.amqpDisconnect('unknown');
+      chai.assert(false);
+    } catch (err) {
+      chai.assert(true);
+    }
+  }).timeout(0);
+
+  it("Create channel",() => {
+    server.amqpConnect('local');
+    try {
+      server.amqpCreateChannel('local', 'test');
+      chai.assert(true);
+    } catch (err) {
+      chai.assert(false);
+    }
+    server.amqpDisconnect('local');
+  }).timeout(0);
+
+  it("Create channel with unknown id",() => {
+    server.amqpConnect('local');
+    try {
+      server.amqpCreateChannel('unknown', 'test');
+      chai.assert(false);
+    } catch (err) {
+      chai.assert(true);
+    }
+  }).timeout(0);
+
+  it("Delete channel",() => {
+    server.amqpConnect('local');
+    server.amqpCreateChannel('local', 'test');
+    try {
+      server.amqpDeleteChannel('local', 'test');
+      chai.assert(true);
+    } catch (err) {
+      chai.assert(false);
+    }
+    server.amqpDisconnect('local');
+  }).timeout(0);
+
+  it("Delete channel with unknown id",() => {
+    server.amqpConnect('local');
+    try {
+      server.amqpDeleteChannel('unknown', 'test');
+      chai.assert(false);
+    } catch (err) {
+      chai.assert(true);
+    }
+  }).timeout(0);
+
+  it("Delete channel with unknown name",() => {
+    server.amqpConnect('local');
+    try {
+      server.amqpDeleteChannel('local', 'test');
+      chai.assert(false);
+    } catch (err) {
+      chai.assert(true);
+    }
+    server.amqpDisconnect('local');
+  }).timeout(0);
+
+  it("Create exchange",() => {
+    server.amqpConnect('local');
+    server.amqpCreateChannel('local', 'test');
+    try {
+      server.amqpCreateExchange('local', 'test', 'test', 'direct');
+      chai.assert(true);
+    } catch (err) {
+      chai.assert(false);
+    }
+    server.amqpDeleteExchange('local', 'test');
+    server.amqpDeleteChannel('local', 'test');
+    server.amqpDisconnect('local');
+  }).timeout(0);
+
+  it("Create exchange with unknown name",() => {
+    server.amqpConnect('local');
+    server.amqpCreateChannel('local', 'test');
+    try {
+      server.amqpCreateExchange('local', 'unknown', 'test', 'direct');
+      chai.assert(false);
+    } catch (err) {
+      chai.assert(true);
+    }
+    server.amqpDeleteChannel('local', 'test');
+    server.amqpDisconnect('local');
+  }).timeout(0);
+
+  it("Create exchange with invalid type",() => {
+    server.amqpConnect('local');
+    server.amqpCreateChannel('local', 'test');
+    try {
+      server.amqpCreateExchange('local', 'test', 'test', 'direct');
+      chai.assert(true);
+    } catch (err) {
+      chai.assert(false);
+    }
+    server.amqpDeleteChannel('local', 'test');
+    server.amqpDisconnect('local');
+  }).timeout(0);
+
+  it("Delete exchange",() => {
+    server.amqpConnect('local');
+    server.amqpCreateChannel('local', 'test');
+    server.amqpCreateExchange('local', 'test', 'test', "direct");
+    try {
+      server.amqpDeleteExchange('local', 'test');
+      chai.assert(true);
+    } catch (err) {
+      chai.assert(false);
+    }
+    server.amqpDeleteChannel('local', 'test');
+    server.amqpDisconnect('local');
+  }).timeout(0);
+
+  it("Delete exchange with unknown name",() => {
+    server.amqpConnect('local');
+    server.amqpCreateChannel('local', 'test');
+    try {
+      server.amqpDeleteExchange('local', 'test');
+      chai.assert(false);
+    } catch (err) {
+      chai.assert(true);
+    }
+    server.amqpDeleteChannel('local', 'test');
+    server.amqpDisconnect('local');
+  }).timeout(0);
+
+  it("Create queue",() => {
+    server.amqpConnect('local');
+    server.amqpCreateChannel('local', 'test');
+    server.amqpCreateExchange('local', 'test', 'test', "direct");
+    try {
+      server.amqpCreateQueue('local', 'test', 'test', 'test');
+      chai.assert(true);
+    } catch (err) {
+      chai.assert(false);
+    }
+    server.amqpDeleteChannel('local', 'test');
+    server.amqpDisconnect('local');
+  }).timeout(0);
+
+  it("Delete queue",() => {
+    server.amqpConnect('local');
+    server.amqpCreateChannel('local', 'test');
+    server.amqpCreateExchange('local', 'test', 'test', "direct");
+    server.amqpCreateQueue('local', 'test', 'test', 'test');
+    try {
+      server.amqpDeleteQueue('local', 'test', 'test');
+      chai.assert(true);
+    } catch (err) {
+      chai.assert(false);
+    }
+    server.amqpDeleteChannel('local', 'test');
+    server.amqpDisconnect('local');
+  }).timeout(0);
+
+  it("Send message",() => {
+    server.amqpConnect('local');
+    server.amqpCreateChannel('local', 'test');
+    server.amqpCreateExchange('local', 'test', 'test', "fanout");
+    server.amqpCreateQueue('local', 'test', 'test', 'test');
+    try {
+      server.amqpSend('local', 'test', 'test', 'test', 'test');
+      chai.assert(true);
+    } catch (err) {
+      chai.assert(false);
+    }
+    server.amqpDeleteChannel('local', 'test');
+    server.amqpDisconnect('local');
+  }).timeout(0);
+
+  it("Receive message",() => {
+    server.amqpConnect('local');
+    server.amqpCreateChannel('local', 'test');
+    server.amqpCreateExchange('local', 'test', 'test', "direct");
+    server.amqpCreateQueue('local', 'test', 'test', 'test', 'test');
+    server.amqpSend('local', 'test', 'test', 'test', 'test');
+    try {
+      server.amqpReceive('local', 'test', 'test', (msg : AMQP.Message) => {
+        if(msg) {
+          chai.assert(true);
+        } else {
+          chai.assert(false);
+        }
+      });
+    } catch (err) {
+      chai.assert(false);
+    }
+    server.amqpDeleteChannel('local', 'test');
+    server.amqpDisconnect('local');
+  }).timeout(0);
+
 });
