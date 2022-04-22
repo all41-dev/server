@@ -20,10 +20,6 @@ import { Api } from './api';
 import { Ui } from './ui';
 import os from 'os';
 
-function sleep(ms : number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 const memoryStore = require('memorystore')(session);
 /**
  * @description hosts all microservice functionalities
@@ -299,8 +295,10 @@ export class Server {
     return Object.keys(this._amqp[id].channels);
   }
 
+
   public amqpConnect(id : string) : Promise<void> {
-    return new Promise(async(resolve, reject) => {
+    return new Promise(async(resolve) => {
+      if(!this._amqp[id]) throw new Error(`amqp '${id}' not found`);
       try {
         this._amqp[id].connection = await AMQP.connect(this._amqp[id].AMQP_URL);
         resolve();
@@ -311,7 +309,7 @@ export class Server {
   }
 
   async amqpDisconnect(id : string) : Promise<void> {
-    return new Promise(async(resolve, reject) => {
+    return new Promise(async(resolve) => {
       if (!this._amqp[id]) {
         throw new Error(`amqp '${id}' not found`);
       }
@@ -327,7 +325,7 @@ export class Server {
   }
 
   async amqpCreateChannel(id : string, name: string) : Promise<void> {
-    return new Promise(async(resolve, reject) => {
+    return new Promise(async(resolve) => {
       if (!this._amqp[id]) {
         throw new Error(`amqp '${id}' not found`);
       }
@@ -351,7 +349,7 @@ export class Server {
   }
 
   async amqpDeleteChannel(id : string, name: string) : Promise<void> {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve) => {
       if (!this._amqp[id].connection) {
         throw new Error("No connection");
       }
@@ -371,7 +369,7 @@ export class Server {
   }
 
   async amqpCreateExchange(id : string, channel: string, name: string, type: string) : Promise<void> {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve) => {
       if (!this._amqp[id].connection) {
         throw new Error("No connection");
       }
@@ -394,7 +392,7 @@ export class Server {
   }
 
   async amqpDeleteExchange(id : string, name: string) : Promise<void> {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve) => {
       if (!this._amqp[id].connection) {
         throw new Error("No connection");
       }
@@ -413,7 +411,7 @@ export class Server {
   }
 
   async amqpCreateQueue(id : string, channel: string, name: string, exchange: string, pattern?: string) : Promise<void> {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve) => {
       if (!this._amqp[id].channels[channel]) {
         throw new Error("No channel");
       }
@@ -436,7 +434,7 @@ export class Server {
   }
 
   async amqpDeleteQueue(id : string, channel: string, name: string) : Promise<void> {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve) => {
       if (!this._amqp[id].channels[channel]) {
         throw new Error("No channel");
       }
@@ -450,7 +448,7 @@ export class Server {
   }
 
   async amqpSend(id : string, channel: string, exchange : string, routingKey: string, message: string) : Promise<void> {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve) => {
       if (!this._amqp[id].channels[channel]) {
         throw new Error("No channel");
       }
@@ -464,7 +462,7 @@ export class Server {
   }
 
   async amqpReceive(id : string, channel: string, queue: string, onMessage : any, maxNumber? : number) : Promise<string> {
-    return new Promise(async (resolve) => {
+    return new Promise(async () => {
       if (!this._amqp[id].channels[channel]) {
         throw new Error("No channel");
       }
