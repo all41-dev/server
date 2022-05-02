@@ -1,7 +1,7 @@
 import { DestroyOptions, FindOptions } from 'sequelize';
 import { Model } from 'sequelize-typescript';
 
-export abstract class Entity<T1 extends Model<T1>, T2> {
+export abstract class EntityRequest<T1 extends Model<T1>, T2> {
   protected _findOptions: FindOptions = {};
   private _dbType: (new(t1?: T1) => T1);
 
