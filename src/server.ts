@@ -315,7 +315,7 @@ export class Server {
       }
       if (this._amqp[id].connection) {
         try {
-          await this._amqp[id].connection!.close();
+          await this._amqp[id].connection?.close();
           resolve();
         } catch (error) {
           throw error;
@@ -339,7 +339,9 @@ export class Server {
       }
 
       try {
-        const channel = await this._amqp[id].connection!.createChannel();
+        const con = this._amqp[id].connection;
+        if (!con) throw new Error('the amqp connection should exist');
+        const channel = await con.createChannel();
         this._amqp[id].channels[name] = channel;
         resolve();
       } catch (error) {
