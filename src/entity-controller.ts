@@ -7,17 +7,31 @@ import { ControllerBase } from './controller-base';
  */
 export abstract class EntityController<T extends Entity<any, any>> extends ControllerBase {
   /** @description To be set within create function */
-  protected static _entity?: Entity<any, any>;
-  // constructor(entity: T) {
-  //   super();
-  //   this._entity = entity;
-  // }
+  protected static _entityType?: new() => Entity<any, any>;
+
+  private static _entityLegacy?: Entity<any, any>;
+  protected static get _entity(): Entity<any, any>|undefined {
+    if (EntityController._entityType) {
+      return new EntityController._entityType();
+    }
+    return EntityController._entityLegacy;
+  }
+  /** @deprecated use setEntityType instead (instance will be made for each get) */
+  protected static set _entity(ent: Entity<any, any> | undefined) {
+    EntityController._entityLegacy = ent;
+  }
+
+  public static setEntityType(t: new () => Entity<any, any>) {
+    EntityController._entityType = t;
+  }
   public static async getAll(req: Request, res: Response, entity: Entity<any, any>): Promise<void> {
     entity.setFilter(req.query.filter);
     entity.setIncludes(req.query.include as any);
 
     return entity.get()
-      .then((data): void => {res.json(data)} )
+      .then((data): void => {
+        res.json(data);
+      })
       .catch((reason): void => {
         res.status(500).json(reason);
         throw new Error(reason);
