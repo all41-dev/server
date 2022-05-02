@@ -7,7 +7,7 @@ import { Model } from 'sequelize-typescript';
 /**
  * @example .
  */
-export abstract class RequestController<T extends EntityRequest<Model<any>, any>> extends ControllerBase {
+export abstract class RequestController<T extends EntityRequest<Model, any>> extends ControllerBase {
   private _requestType: new () => T
   public constructor(entityType: new () => T) {
     super();
