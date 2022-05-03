@@ -27,6 +27,7 @@ export interface IApiOptions<T extends Api<any>> extends IRouteOptions {
   type: { new(options: IApiOptions<T>): T};
   config?: any;
   requireAuth?: boolean;
+  amqp?: string;
 }
 
 export interface IJobOptions extends IMuteable {
