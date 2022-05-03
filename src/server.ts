@@ -297,45 +297,45 @@ export class Server {
 
 
   public amqpConnect(id : string) : Promise<void> {
-    return new Promise(async(resolve) => {
-      if(!this._amqp[id]) throw new Error(`amqp '${id}' not found`);
+    return new Promise(async(resolve, reject) => {
+      if(!this._amqp[id]) reject(new Error(`amqp '${id}' not found`));
       try {
         this._amqp[id].connection = await AMQP.connect(this._amqp[id].AMQP_URL);
         resolve();
       } catch (error) {
-        throw error;
+        reject(error);
       }
     });
   }
 
   async amqpDisconnect(id : string) : Promise<void> {
-    return new Promise(async(resolve) => {
+    return new Promise(async(resolve, reject) => {
       if (!this._amqp[id]) {
-        throw new Error(`amqp '${id}' not found`);
+        reject(Error(`amqp '${id}' not found`));
       }
       if (this._amqp[id].connection) {
         try {
           await this._amqp[id].connection?.close();
           resolve();
         } catch (error) {
-          throw error;
+          reject(error);
         }
       }
     });
   }
 
   async amqpCreateChannel(id : string, name: string) : Promise<void> {
-    return new Promise(async(resolve) => {
+    return new Promise(async(resolve, reject) => {
       if (!this._amqp[id]) {
-        throw new Error(`amqp '${id}' not found`);
+        reject(new Error(`amqp '${id}' not found`));
       }
 
       if (!this._amqp[id].connection) {
-        throw new Error("No connection");
+        reject(new Error("No connection"));
       }
 
       if (this._amqp[id].channels[name]) {
-        return this._amqp[id].channels[name];
+        resolve();
       }
 
       try {
@@ -345,19 +345,20 @@ export class Server {
         this._amqp[id].channels[name] = channel;
         resolve();
       } catch (error) {
-        throw error;
+        reject(error);
       }
     });
   }
 
   async amqpDeleteChannel(id : string, name: string) : Promise<void> {
-    return new Promise(async (resolve) => {
+    return new Promise(async (resolve, reject) => {
+      if(!this._amqp[id]) reject(new Error(`amqp '${id}' not found`));
       if (!this._amqp[id].connection) {
-        throw new Error("No connection");
+        reject(new Error("No connection"));
       }
 
       if (!this._amqp[id].channels[name]) {
-        return;
+        reject(new Error(`amqp channel '${name}' not found`));
       }
 
       try {
@@ -365,62 +366,62 @@ export class Server {
         delete this._amqp[id].channels[name];
         resolve();
       } catch (error) {
-        throw error;
+        reject(error);
       }
     });
   }
 
   async amqpCreateExchange(id : string, channel: string, name: string, type: string) : Promise<void> {
-    return new Promise(async (resolve) => {
+    return new Promise(async (resolve, reject) => {
       if (!this._amqp[id].connection) {
-        throw new Error("No connection");
+        reject(new Error("No connection"));
       }
 
       if (!this._amqp[id].channels[channel]) {
-        throw new Error("No channel");
+        reject(new Error(`amqp channel '${channel}' not found`));
       }
 
       if (!Server.amqpTypes.includes(type)) {
-        throw new Error("Invalid type");
+        reject(new Error(`amqp type '${type}' not found`));
       }
 
       try {
         await this._amqp[id].channels[channel].assertExchange(name, type, { durable: false });
         resolve();
       } catch (error) {
-        throw error;
+        reject(error);
       }
     });
   }
 
   async amqpDeleteExchange(id : string, name: string) : Promise<void> {
-    return new Promise(async (resolve) => {
+    return new Promise(async (resolve, reject) => {
       if (!this._amqp[id].connection) {
-        throw new Error("No connection");
+        reject(new Error("No connection"));
       }
 
       if (!this._amqp[id].channels[name]) {
-        throw new Error("No channel");
+        reject(new Error(`amqp channel '${name}' not found`));
       }
 
       try {
         await this._amqp[id].channels[name].deleteExchange(name);
         resolve();
       } catch (error) {
-        throw error;
+        reject(error);
       }
     });
   }
 
   async amqpCreateQueue(id : string, channel: string, name: string, exchange: string, pattern?: string) : Promise<void> {
-    return new Promise(async (resolve) => {
+    return new Promise(async (resolve, reject) => {
       if (!this._amqp[id].channels[channel]) {
-        throw new Error("No channel");
+        reject(new Error(`amqp channel '${channel}' not found`));
       }
       try {
         await this._amqp[id].channels[channel].assertQueue(name, { durable: false });
       } catch (error) {
-        throw error;
+        reject(error);
       }
       try {
         if (pattern != null) {
@@ -430,43 +431,44 @@ export class Server {
         }
         resolve();
       } catch (error) {
-        throw error;
+        reject(error);
       }
     });
   }
 
   async amqpDeleteQueue(id : string, channel: string, name: string) : Promise<void> {
-    return new Promise(async (resolve) => {
+    return new Promise(async (resolve, reject) => {
+      if(!this._amqp[id]) reject(new Error(`amqp '${id}' not found`));
       if (!this._amqp[id].channels[channel]) {
-        throw new Error("No channel");
+        reject(new Error(`amqp channel '${channel}' not found`));
       }
       try {
         await this._amqp[id].channels[channel].deleteQueue(name);
         resolve();
       } catch (error) {
-        throw error;
+        reject(error);
       }
     });
   }
 
   async amqpSend(id : string, channel: string, exchange : string, routingKey: string, message: string) : Promise<void> {
-    return new Promise(async (resolve) => {
+    return new Promise(async (resolve, reject) => {
       if (!this._amqp[id].channels[channel]) {
-        throw new Error("No channel");
+        reject(new Error(`amqp channel '${channel}' not found`));
       }
       try {
         this._amqp[id].channels[channel].publish(exchange, routingKey, Buffer.from(message));
         resolve();
       } catch (error) {
-        throw error;
+        reject(error);
       }
     });
   }
 
   async amqpReceive(id : string, channel: string, queue: string, onMessage : any, maxNumber? : number) : Promise<string> {
-    return new Promise(async () => {
+    return new Promise(async (resolve, reject) => {
       if (!this._amqp[id].channels[channel]) {
-        throw new Error("No channel");
+        reject(new Error(`amqp channel '${channel}' not found`));
       }
       try {
         if (maxNumber) {
@@ -474,15 +476,15 @@ export class Server {
         }
         await this._amqp[id].channels[channel].consume(queue, onMessage, { noAck: false });
       } catch (error) {
-        throw error;
+        reject(error);
       }
     });
   }
 
   async amqpGetChannel(id : string, channel: string) : Promise<any> {
-    return new Promise(async (resolve) => {
+    return new Promise(async (resolve, reject) => {
       if (!this._amqp[id].channels[channel]) {
-        throw new Error("No channel");
+        reject(new Error(`amqp channel '${channel}' not found`));
       }
       resolve(this._amqp[id].channels[channel]);
     });
