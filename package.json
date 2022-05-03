@@ -23,7 +23,7 @@
   "license": "MIT",
   "dependencies": {
     "@all41-dev/db-tools": "^1.2.0",
-    "@all41-dev/log": "^1.1.5",
+    "@all41-dev/log": "^1.1.6",
     "amqplib": "^0.8.0",
     "bluebird": "^3.7.2",
     "connect-history-api-fallback": "^1.6.0",
