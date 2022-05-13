@@ -9,7 +9,7 @@ import { Model } from 'sequelize-typescript';
  */
 export abstract class RequestController<T extends EntityRequest<Model, any>> extends ControllerBase {
   private _requestType: new () => T
-  public constructor(entityType: new (dbType? : new(t1? : Model) => Model) => T) {
+  public constructor(entityType: new (dbType? : new(t1? : any) => any) => T) {
     super();
     this._requestType = entityType;
   }
