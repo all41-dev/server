@@ -40,7 +40,7 @@ export abstract class EntityRequest<T1 extends Model<T1>, T2> {
       const clientObj = await this.dbToClient(postProcessed);
       return clientObj;
       // (err) => { throw new Error(`insert failed => ${err}`); });
-    });
+    }).catch((err) => { throw new Error(`insert failed => ${err}`); });
   }
 
   public async put(receivedObj: T2, fields?: (keyof T1)[]): Promise<T2> {
@@ -53,7 +53,7 @@ export abstract class EntityRequest<T1 extends Model<T1>, T2> {
       } catch (err) {
         throw new Error(`update failed => ${err}`);
       }
-    });
+    }).catch((err) => { throw new Error(`update failed => ${err}`); });;
   }
 
   public async del(id: number|string, pk?: keyof T1): Promise<void> {
@@ -61,7 +61,7 @@ export abstract class EntityRequest<T1 extends Model<T1>, T2> {
 
     const options: DestroyOptions = { where: { [key]: id } };
 
-    await this.preDelete(id).then(async (): Promise<number> => this.dbDestroy(options));
+    await this.preDelete(id).then(async (): Promise<number> => this.dbDestroy(options)).catch((err) => { throw new Error(`delete failed => ${err}`); });
   }
 
   public abstract dbToClient(dbObj: T1): Promise<T2>;
