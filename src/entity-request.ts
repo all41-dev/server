@@ -53,7 +53,7 @@ export abstract class EntityRequest<T1 extends Model<T1>, T2> {
       } catch (err) {
         throw new Error(`update failed => ${err}`);
       }
-    }).catch((err) => { throw new Error(`update failed => ${err}`); });;
+    }).catch((err) => { throw new Error(`update failed => ${err}`); });
   }
 
   public async del(id: number|string, pk?: keyof T1): Promise<void> {
