@@ -34,6 +34,7 @@ export interface IJobOptions extends IMuteable {
   schedule: string;
   function: () => any;
   name: string;
+  code: string;
   config?: any;
   executeOnStart: boolean;
   context?: any;

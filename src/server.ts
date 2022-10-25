@@ -38,6 +38,7 @@ export class Server {
   protected readonly _jobs: {
     instance: CronJob;
     code: string;
+    name: string;
     isScheduled?: boolean;
     options: {execOnStart: boolean};
   }[] = [];
@@ -228,12 +229,12 @@ export class Server {
       job.instance.start();
       job.isScheduled = true;
       if (!mute) {
-        Server.logger.info(`job ${job.code} scheduled`);
+        Server.logger.info(`job ${job.name} scheduled`);
       }
       if (job.options.execOnStart) {
         job.instance.fireOnTick();
         if (!mute) {
-          Server.logger.info(`job ${job.code} execution started`);
+          Server.logger.info(`job ${job.name} execution started`);
         }
       }
     }
@@ -243,7 +244,7 @@ export class Server {
     for(const job of this._jobs) {
       job.instance.stop();
       job.isScheduled = false;
-      Server.logger.info(`job ${job.code} unscheduled`);
+      Server.logger.info(`job ${job.name} unscheduled`);
     }
   }
   public unscheduleJob(code: string): void {
@@ -251,7 +252,7 @@ export class Server {
     if (!job) throw new Error(`job '${code}' not found, can't be stopped.`);
     job.instance.stop();
     job.isScheduled = false;
-    Server.logger.info(`job ${code} unscheduled`);
+    Server.logger.info(`job ${job.name} unscheduled`);
   }
 
   public scheduleJob(code: string, doExecute = false): void {
@@ -259,10 +260,10 @@ export class Server {
     if (!job) throw new Error(`job '${code}' not found, can't be started.`);
     job.instance.start();
     job.isScheduled = true
-    Server.logger.info(`job ${code} scheduled`);
+    Server.logger.info(`job ${job.name} scheduled`);
     if (doExecute) {
       job.instance.fireOnTick();
-      Server.logger.info(`job ${code} execution started`);
+      Server.logger.info(`job ${job.name} execution started`);
     }
   }
 
@@ -270,7 +271,7 @@ export class Server {
     const job = this._jobs.find((j) => j.code === code);
     if (!job) throw new Error(`job '${code}' not found, can't be executed.`);
     job.instance.fireOnTick();
-    Server.logger.info(`job ${code} ad-hoc execution started`);
+    Server.logger.info(`job ${job.name} ad-hoc execution started`);
   }
   public isJobScheduled(code: string): boolean {
     const job = this._jobs.find((j) => j.code === code);
@@ -529,7 +530,7 @@ export class Server {
       runOnInit: false,
       start: false,
       context: jobOpt.context,
-    }), code: jobOpt.name, isScheduled: false, options: { execOnStart: jobOpt.executeOnStart }
+    }), code: jobOpt.code || jobOpt.name, name: jobOpt.name, isScheduled: false, options: { execOnStart: jobOpt.executeOnStart }
     });
     if (!jobOpt.mute) {
       Server.logger.info({
