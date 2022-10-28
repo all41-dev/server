@@ -146,18 +146,17 @@ export class Server {
   }
 
   public async stop(killProcess = true): Promise<void> {
-    if (!this.http) {
-      throw new Error('http server not started');
-    }
-    await new Promise<void>((ok): void => {
-      this.http.close((): void => {
-        Server.logger.info({
-          message: `server stopped on ${os.hostname}`,
-          hash: 'server-state',
+    if (this.http) {
+      await new Promise<void>((ok): void => {
+        this.http.close((): void => {
+          Server.logger.info({
+            message: `server stopped on ${os.hostname}`,
+            hash: 'server-state',
+          });
+          ok();
         });
-        ok();
       });
-    });
+    }
     for (const job of this._jobs) { job.instance.stop(); }
     if (killProcess) process.exit(0);
   }
