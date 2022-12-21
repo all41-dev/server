@@ -495,11 +495,16 @@ export class Server {
     const router = Router();
 
     router.use('/', express.static(staticOptions.ressourcePath));
+    staticOptions.getRoutes?.forEach((route: { path: string; handler: (req: any, res: any) => void }) => {
+      router.get(route.path, route.handler);
+    });
 
     this._routes.push({
-      router: router,
+      router,
       path: staticOptions.baseRoute,
-      requireAuth: staticOptions.requireAuth || false});
+      requireAuth: staticOptions.requireAuth || false
+    });
+
     // if (ui.requireAuth) { this._app.use(ui.baseRoute, requiresAuth(), uiInst); }
     // else { this._app.use(ui.baseRoute, uiInst); }
   }

@@ -57,6 +57,7 @@ export interface IStaticRouteOptions extends IRouteOptions {
   ressourcePath: string;
   config?: any;
   requireAuth?: boolean;
+  getRoutes?: { path: string, handler: (req: any, res: any) => void }[]
 }
 
 export interface IAuthOptions {
