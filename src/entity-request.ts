@@ -1,11 +1,11 @@
-import { DestroyOptions, FindOptions } from 'sequelize';
+import { DestroyOptions, FindOptions, Utils } from 'sequelize';
 import { Model } from 'sequelize-typescript';
 
 export abstract class EntityRequest<T1 extends Model<T1>, T2> {
   protected _findOptions: FindOptions = {};
-  private _dbType: (new(t1?: T1) => T1);
+  private _dbType: (new (values?: Utils.MakeNullishOptional<T1>) => T1);
 
-  public constructor(dbType: new(t1?: T1) => T1) { this._dbType = dbType; }
+  public constructor(dbType: new (values?: Utils.MakeNullishOptional<T1>) => T1) { this._dbType = dbType; }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected static copyProps<T3>(from: any, to: Partial<T3>, props: (keyof T3)[]): Partial<T3> {
