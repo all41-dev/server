@@ -1,5 +1,5 @@
 import os from 'os';
-import Http from 'request-promise';
+import fetch from "@all41-dev/node-fetch";
 import { Request, Response, NextFunction } from 'express';
 import express from 'express';
 import Jwt from 'jsonwebtoken';
@@ -129,7 +129,7 @@ export abstract class ControllerBase {
       }
       const iss = tokenWithHeader.payload.iss;
       if (!ControllerBase._certsCache[iss]){
-        ControllerBase._certsCache[iss] = await Http.get(`${iss}/oauth2/certs`);
+        ControllerBase._certsCache[iss] = await (await fetch(`${iss}/oauth2/certs`)).text();
       }
 
       const certs = JSON.parse(ControllerBase._certsCache[iss]);
