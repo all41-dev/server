@@ -63,6 +63,15 @@ export abstract class EntityRequest<T1 extends Model<T1>, T2> {
 
     await this.preDelete(id).then(async (): Promise<number> => this.dbDestroy(options)).catch((err) => { throw new Error(`delete failed => ${err}`); });
   }
+  protected async dbFindAll(options: FindOptions): Promise<T1[]> {
+    return await this._dbType.prototype.findAll(options);
+  }
+  protected async dbFindByPk(pk: any): Promise<T1 | null> {
+    return await this._dbType.prototype.findByPk(pk);
+  }
+  protected async dbDestroy(options: DestroyOptions): Promise<number> {
+    return await this._dbType.prototype.destroy(options);
+  }
 
   public abstract dbToClient(dbObj: T1): Promise<T2>;
   public abstract clientToDb(clientObj: T2): Promise<T1>;
@@ -73,11 +82,4 @@ export abstract class EntityRequest<T1 extends Model<T1>, T2> {
   public abstract preDelete(id: number|string): Promise<number>;
   public abstract postCreation(obj: T1): Promise<T1>;
   public abstract setIncludes(includePaths: string[]): void;
-  // public abstract get model(): Model<Instance<T1>, T1>;
-
-  protected abstract dbFindAll(options: FindOptions): Promise<T1[]>;
-  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  protected abstract dbFindByPk(pk: any): Promise<T1|null>;
-  protected abstract dbDestroy(options: DestroyOptions): Promise<number>;
-
 }
