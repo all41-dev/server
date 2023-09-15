@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { EntityRequest } from './entity-request';
 import { ControllerBase } from './controller-base';
 import { Model } from 'sequelize-typescript';
+import { Server } from './server';
 
 /**
  * @example .
@@ -28,7 +29,7 @@ export abstract class RequestController<T extends EntityRequest<Model, any>> ext
       })
       .catch((reason): void => {
         res.status(500).json(reason);
-        throw new Error(reason);
+        Server.logger.error(reason);
       });
   }
   public async getById(req: Request, res: Response, er: EntityRequest<any, any>, key: string): Promise<void> {
@@ -38,7 +39,7 @@ export abstract class RequestController<T extends EntityRequest<Model, any>> ext
       .then((data): void => {res.json(data)} )
       .catch((reason): void => {
         res.status(500).json(reason);
-        throw new Error(reason);
+        Server.logger.error(reason);
       });
   }
   public async post(req: Request, res: Response, er: EntityRequest<any, any>): Promise<void> {
@@ -48,7 +49,7 @@ export abstract class RequestController<T extends EntityRequest<Model, any>> ext
       .then((data): void => {res.json(data)} )
       .catch((reason): void => {
         res.status(500).json(reason);
-        throw new Error(reason);
+        Server.logger.error(reason);
       });
   }
   public async update(req: Request, res: Response, er: EntityRequest<any, any>): Promise<void> {
@@ -58,7 +59,7 @@ export abstract class RequestController<T extends EntityRequest<Model, any>> ext
       .then((data): void => {res.json(data)} )
       .catch((reason): void => {
         res.status(500).json(reason);
-        throw new Error(reason);
+        Server.logger.error(reason);
       });
   }
   public async delete(req: Request, res: Response, er: EntityRequest<any, any>, key?: string): Promise<void> {
@@ -66,7 +67,7 @@ export abstract class RequestController<T extends EntityRequest<Model, any>> ext
       .then((): void => { res.send(); } )
       .catch((reason): void => {
         res.status(500).json(reason);
-        throw new Error(reason);
+        Server.logger.error(reason);
       });
   }
 }
