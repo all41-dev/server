@@ -64,13 +64,13 @@ export abstract class EntityRequest<T1 extends Model<T1>, T2> {
     await this.preDelete(id).then(async (): Promise<number> => this.dbDestroy(options)).catch((err) => { throw new Error(`delete failed => ${err}`); });
   }
   protected async dbFindAll(options: FindOptions): Promise<T1[]> {
-    return await this._dbType.prototype.findAll(options);
+    return await (this._dbType as any).findAll(options);
   }
   protected async dbFindByPk(pk: any): Promise<T1 | null> {
-    return await this._dbType.prototype.findByPk(pk);
+    return await (this._dbType as any).prototype.findByPk(pk);
   }
   protected async dbDestroy(options: DestroyOptions): Promise<number> {
-    return await this._dbType.prototype.destroy(options);
+    return await (this._dbType as any).prototype.destroy(options);
   }
 
   public abstract dbToClient(dbObj: T1): Promise<T2>;
