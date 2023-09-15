@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/member-ordering */
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { EntityRequest } from './entity-request';
 import { ControllerBase } from './controller-base';
 import { Model } from 'sequelize-typescript';
@@ -19,8 +19,9 @@ export abstract class RequestController<T extends EntityRequest<Model, any>> ext
     return new this._requestType();
   }
 
-  public async getAll(req: Request, res: Response, er?: EntityRequest<any, any>): Promise<void> {
-    const erValue = er || this.getNewRequest();
+  public async getAll(req: Request, res: Response, er?: EntityRequest<any, any> | NextFunction): Promise<void> {
+    // if er arg not set or is an express next function, create and use new request, otherwise use er arg
+    const erValue = (!er || typeof er === 'function') ? this.getNewRequest() : er;
     
     erValue.setFilter(req.query.filter);
     erValue.setIncludes(req.query.include as any);
