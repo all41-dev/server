@@ -19,14 +19,11 @@ export abstract class RequestController<T extends EntityRequest<Model, any>> ext
     return new this._requestType();
   }
 
-  public async getAll(req: Request, res: Response, er?: EntityRequest<any, any> | NextFunction): Promise<void> {
-    // if er arg not set or is an express next function, create and use new request, otherwise use er arg
-    const erValue = (!er || typeof er === 'function') ? this.getNewRequest() : er;
-    
-    erValue.setFilter(req.query.filter);
-    erValue.setIncludes(req.query.include as any);
+  public async getAll(req: Request, res: Response, entity: T): Promise<void> {
+    entity.setFilter(req.query.filter);
+    entity.setIncludes(req.query.include as any);
 
-    return erValue.get()
+    return entity.get()
       .then((data): void => {
         res.json(data);
       })
