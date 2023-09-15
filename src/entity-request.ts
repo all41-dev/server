@@ -43,7 +43,7 @@ export abstract class EntityRequest<T1 extends Model<T1>, T2> {
     }).catch((err) => { throw new Error(`insert failed => ${err}`); });
   }
 
-  public async put(receivedObj: T2, fields?: (keyof T1)[]): Promise<T2> {
+  public async patch(receivedObj: T2, fields?: (keyof T1)[]): Promise<T2> {
     return await this.preUpdate(receivedObj).then(async (): Promise<T2> => {
       try {
         const dbObj: T1 = await this.clientToDb(receivedObj);
