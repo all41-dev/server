@@ -19,11 +19,13 @@ export abstract class RequestController<T extends EntityRequest<Model, any>> ext
     return new this._requestType();
   }
 
-  public async getAll(req: Request, res: Response, er: EntityRequest<any, any>): Promise<void> {
-    er.setFilter(req.query.filter);
-    er.setIncludes(req.query.include as any);
+  public async getAll(req: Request, res: Response, er?: EntityRequest<any, any>): Promise<void> {
+    const erValue = er || this.getNewRequest();
+    
+    erValue.setFilter(req.query.filter);
+    erValue.setIncludes(req.query.include as any);
 
-    return er.get()
+    return erValue.get()
       .then((data): void => {
         res.json(data);
       })
