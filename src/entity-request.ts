@@ -18,13 +18,12 @@ export abstract class EntityRequest<T1 extends Model<T1>, T2> {
 
   /**
    * @description get by primary key
-   * @param id is autonumber or uuid or unique code
+   * @param pkValue is autonumber or uuid or unique code
    */
-  public async get(id?: number|string, pk?: keyof T1): Promise<T2[]> {
-    if (id) {
-      const key = pk || 'Id';
+  public async get(pkValue?: number | string): Promise<T2[]> {
+    if (pkValue) {
       this._findOptions.where = {
-        [key]: id,
+        [(this._dbType as any).primaryKeyAttribute]: pkValue,
       };
     }
     return this.dbFindAll(this._findOptions).then((dbes): Promise<T2[]> =>
@@ -56,13 +55,19 @@ export abstract class EntityRequest<T1 extends Model<T1>, T2> {
     }).catch((err) => { throw new Error(`update failed => ${err}`); });
   }
 
-  public async del(id: number|string, pk?: keyof T1): Promise<void> {
-    const key = pk || 'Id';
+  public async del(id: number|string): Promise<void> {
+    const options: DestroyOptions = {
+      where: { [(this._dbType as any).primaryKeyAttribute]: id }
+    };
 
-    const options: DestroyOptions = { where: { [key]: id } };
-
-    await this.preDelete(id).then(async (): Promise<number> => this.dbDestroy(options)).catch((err) => { throw new Error(`delete failed => ${err}`); });
+    try {
+      await this.preDelete(id);
+      this.dbDestroy(options)
+    } catch (err) {
+      throw new Error(`delete failed => ${err}`);
+    }
   }
+  
   protected async dbFindAll(options: FindOptions): Promise<T1[]> {
     return await (this._dbType as any).findAll(options);
   }

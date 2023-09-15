@@ -14,10 +14,10 @@ export class RequestController<T extends EntityRequest<Model, any>> extends Cont
     const controler = new RequestController;
 
     router.get("/", (req, res) => controler.getAll(req, res, new er));
-    router.get("/:id", (req, res) => controler.getById(req, res, new er, 'uuid'));
+    router.get("/:id", (req, res) => controler.getById(req, res, new er));
     router.post("/", (req, res) => controler.post(req, res, new er));
     router.patch("/", (req, res) => controler.patch(req, res, new er));
-    router.delete("/:id", (req, res) => controler.delete(req, res, new er, 'uuid'));
+    router.delete("/:id", (req, res) => controler.delete(req, res, new er));
 
     return router;
   }
@@ -35,10 +35,10 @@ export class RequestController<T extends EntityRequest<Model, any>> extends Cont
         Server.logger.error(reason);
       });
   }
-  public async getById(req: Request, res: Response, er: T, key: string): Promise<void> {
+  public async getById(req: Request, res: Response, er: T): Promise<void> {
     er.setIncludes(req.query.include as any);
 
-    return er.get(req.params.id, key)
+    return er.get(req.params.id)
       .then((data): void => {res.json(data)} )
       .catch((reason): void => {
         res.status(500).json(reason);
@@ -65,8 +65,8 @@ export class RequestController<T extends EntityRequest<Model, any>> extends Cont
         Server.logger.error(reason);
       });
   }
-  public async delete(req: Request, res: Response, er: T, key?: string): Promise<void> {
-    return er.del(req.params.id, key)
+  public async delete(req: Request, res: Response, er: T): Promise<void> {
+    return er.del(req.params.id)
       .then((): void => { res.send(); } )
       .catch((reason): void => {
         res.status(500).json(reason);
