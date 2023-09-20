@@ -16,7 +16,7 @@ export class RequestController<T extends EntityRequest<Model, any>> extends Cont
     router.get("/", (req, res) => controler.getAll(req, res, new er));
     router.get("/:id", (req, res) => controler.getById(req, res, new er));
     router.post("/", (req, res) => controler.post(req, res, new er));
-    router.patch("/", (req, res) => controler.patch(req, res, new er));
+    router.patch("/:id", (req, res) => controler.patch(req, res, new er));
     router.delete("/:id", (req, res) => controler.delete(req, res, new er));
 
     return router;
