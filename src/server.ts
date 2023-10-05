@@ -157,7 +157,12 @@ export class Server {
         });
       });
     }
-    for (const job of this._jobs) { job.instance.stop(); }
+    if (this._jobs) {
+      for (const job of this._jobs) { job.instance.stop(); }
+    }
+    if (this._dbs) {
+      for (const db of this._dbs) { try { await db.sequelize.close(); } catch { Server.logger.info('Error closing db: continue stop'); }}
+    }
     if (killProcess) process.exit(0);
   }
   public async restart(): Promise<void> {
@@ -213,6 +218,9 @@ export class Server {
       if (!this.options.mute) {
         Server.logger.info(`Server started on ${os.hostname}`);
       }
+
+      process.on('SIGINT', this.stop);
+      process.on('SIGTERM', this.stop);
     } catch (error) {
       Server.logger.log('crit', (error as Error).message, {
         error,
