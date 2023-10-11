@@ -9,17 +9,17 @@ import { Server } from './server';
  * @example .
  */
 export class RequestController<T extends EntityRequest<Model, any>> extends ControllerBase {
-  public create(er: new() => T) {
-    const router = Router();
+  public create(er: new() => T, router?: Router) {
+    const usedRouter = router || Router();
     const controler = new RequestController;
 
-    router.get("/", (req, res) => controler.getAll(req, res, new er));
-    router.get("/:id", (req, res) => controler.getById(req, res, new er));
-    router.post("/", (req, res) => controler.post(req, res, new er));
-    router.patch("/:id", (req, res) => controler.patch(req, res, new er));
-    router.delete("/:id", (req, res) => controler.delete(req, res, new er));
+    usedRouter.get("/", (req, res) => controler.getAll(req, res, new er));
+    usedRouter.get("/:id", (req, res) => controler.getById(req, res, new er));
+    usedRouter.post("/", (req, res) => controler.post(req, res, new er));
+    usedRouter.patch("/:id", (req, res) => controler.patch(req, res, new er));
+    usedRouter.delete("/:id", (req, res) => controler.delete(req, res, new er));
 
-    return router;
+    return usedRouter;
   }
 
   public async getAll(req: Request, res: Response, er: T): Promise<void> {
