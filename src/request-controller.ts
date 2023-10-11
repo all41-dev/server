@@ -58,7 +58,7 @@ export class RequestController<T extends EntityRequest<Model, any>> extends Cont
   public async patch(req: Request, res: Response, er: T): Promise<void> {
     er.setIncludes(req.query.include as any);
 
-    return er.patch(req.body)
+    return er.patch({ receivedObj: req.body, keyValue: req.params.id, fields: req.query.fields as any })
       .then((data): void => {res.json(data)} )
       .catch((reason): void => {
         res.status(500).json(reason);

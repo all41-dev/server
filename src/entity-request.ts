@@ -1,11 +1,16 @@
 import { DestroyOptions, FindOptions, Utils } from 'sequelize';
 import { Model } from 'sequelize-typescript';
+import { ClientModelBase } from './client-model-base';
 
-export abstract class EntityRequest<T1 extends Model<T1>, T2> {
+export abstract class EntityRequest<T1 extends Model<T1>, T2 extends ClientModelBase<T2>> {
   protected _findOptions: FindOptions = {};
   private _dbType: (new (values?: Utils.MakeNullishOptional<T1>) => T1);
-
-  public constructor(dbType: new (values?: Utils.MakeNullishOptional<T1>) => T1) { this._dbType = dbType; }
+  private _modelType: new () => T2;
+  
+  public constructor(dbType: new (values?: Utils.MakeNullishOptional<T1>) => T1, modelType: new () => T2) {
+    this._dbType = dbType;
+    this._modelType = modelType;
+  }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected static copyProps<T3>(from: any, to: Partial<T3>, props: (keyof T3)[]): Partial<T3> {
@@ -42,11 +47,20 @@ export abstract class EntityRequest<T1 extends Model<T1>, T2> {
     }).catch((err) => { throw new Error(`insert failed => ${err}`); });
   }
 
-  public async patch(receivedObj: T2, fields?: (keyof T1)[]): Promise<T2> {
-    return await this.preUpdate(receivedObj).then(async (): Promise<T2> => {
+  public async patch(params: {
+    receivedObj: T2;
+    fields?: (keyof T1)[];
+    keyValue: string
+  }): Promise<T2> {
+    if (!params.receivedObj) throw new Error('receivedObj is not set for patch request');
+    if (!params.receivedObj) throw new Error('keyValue is not set for patch request');
+
+    return await this.preUpdate(params.receivedObj).then(async (): Promise<T2> => {
       try {
-        const dbObj: T1 = await this.clientToDb(receivedObj);
-        const savedObj = await (fields ? dbObj.save({ fields }) : dbObj.save());
+        const clientObj = new this._modelType;
+        clientObj.init({ initialValues: params.receivedObj, pkValue: params.keyValue})
+        const dbObj: T1 = await this.clientToDb(params.receivedObj);
+        const savedObj = await (params.fields ? dbObj.save({ fields: params.fields }) : dbObj.save());
         const res = await this.dbToClient(savedObj);
         return res;
       } catch (err) {
