@@ -1,8 +1,7 @@
 import { DestroyOptions, FindOptions, Utils } from 'sequelize';
 import { Model } from 'sequelize-typescript';
-import { ClientModelBase } from './client-model-base';
 
-export abstract class EntityRequest<T1 extends Model<T1>, T2 extends ClientModelBase<T2>> {
+export abstract class EntityRequest<T1 extends Model<T1>, T2 extends { pkPropName: keyof T2}> {
   protected _findOptions: FindOptions = {};
   private _dbType: (new (values?: Utils.MakeNullishOptional<T1>) => T1);
   private _modelType: new () => T2;
@@ -20,6 +19,7 @@ export abstract class EntityRequest<T1 extends Model<T1>, T2 extends ClientModel
     }
     return to;
   }
+
 
   /**
    * @description get by primary key
@@ -57,9 +57,8 @@ export abstract class EntityRequest<T1 extends Model<T1>, T2 extends ClientModel
 
     return await this.preUpdate(params.receivedObj).then(async (): Promise<T2> => {
       try {
-        const clientObj = new this._modelType;
-        clientObj.init({ initialValues: params.receivedObj, pkValue: params.keyValue})
-        const dbObj: T1 = await this.clientToDb(params.receivedObj);
+        const clientObj = this.initForPatch({ initialValues: params.receivedObj, pkValue: params.keyValue });
+        const dbObj: T1 = await this.clientToDb(clientObj);
         const savedObj = await (params.fields ? dbObj.save({ fields: params.fields }) : dbObj.save());
         const res = await this.dbToClient(savedObj);
         return res;
@@ -92,6 +91,20 @@ export abstract class EntityRequest<T1 extends Model<T1>, T2 extends ClientModel
     return await (this._dbType as any).prototype.destroy(options);
   }
 
+  private initForPatch(options: { initialValues?: string | T2/* as an interface */, pkValue?: any }): T2 {
+    const obj = new this._modelType;
+    if (options.initialValues) {
+      const initialValuesObj = typeof options.initialValues === 'string' ?
+        JSON.parse(options.initialValues) as { [key: string]: any } :
+        options.initialValues;
+      Object.assign(obj, initialValuesObj);
+    }
+    if (options.pkValue) {
+      obj[obj.pkPropName] = options.pkValue;
+    }
+    return obj;
+  }
+  
   public abstract dbToClient(dbObj: T1): Promise<T2>;
   public abstract clientToDb(clientObj: T2): Promise<T1>;
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
