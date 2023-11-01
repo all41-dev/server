@@ -53,7 +53,7 @@ export abstract class EntityRequest<T1 extends Model<T1>, T2 extends { pkPropNam
     keyValue: string
   }): Promise<T2> {
     if (!params.receivedObj) throw new Error('receivedObj is not set for patch request');
-    if (!params.receivedObj) throw new Error('keyValue is not set for patch request');
+    if (!params.keyValue) throw new Error('keyValue is not set for patch request');
 
     return await this.preUpdate(params.receivedObj).then(async (): Promise<T2> => {
       try {
