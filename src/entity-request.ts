@@ -1,7 +1,7 @@
 import { DestroyOptions, FindOptions, Utils } from 'sequelize';
 import { Model } from 'sequelize-typescript';
 
-export type PkPropType = { pkPropName: keyof PkPropType } & any;
+export type PkPropType = { [key: string|number]: any; pkPropName: keyof PkPropType & string; };
 export abstract class EntityRequest<T1 extends Model<T1>, T2 extends PkPropType> {
   protected _findOptions: FindOptions = {};
   private _dbType: (new (values?: Utils.MakeNullishOptional<T1>) => T1);
@@ -101,7 +101,7 @@ export abstract class EntityRequest<T1 extends Model<T1>, T2 extends PkPropType>
       Object.assign(obj, initialValuesObj);
     }
     if (options.pkValue) {
-      obj[obj.pkPropName] = options.pkValue;
+      obj[obj.pkPropName as any] = options.pkValue;
     }
     return obj;
   }
