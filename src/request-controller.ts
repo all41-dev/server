@@ -8,7 +8,7 @@ import { Server } from './server';
 /**
  * @example .
  */
-export class RequestController<ENT extends EntityRequest<Model, PkPropType>> extends ControllerBase {
+export class RequestController<ENT extends EntityRequest<Model, any & PkPropType>> extends ControllerBase {
   public create(er: new() => ENT, router?: Router) {
     const usedRouter = router || Router();
 
