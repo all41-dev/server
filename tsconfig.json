@@ -2,7 +2,7 @@
   "compilerOptions": {
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "target": "ES2019",
+    "target": "ES2022",
     "module": "commonjs",
     "declaration": true,
     "outDir": "./dist",
@@ -11,6 +11,6 @@
     "sourceMap": true,
   },
   "include": [
-    "./src/**/*.ts"
+    "./src/**/*.ts",
   ]
 }

@@ -19,14 +19,16 @@ import JwtDecode from "jwt-decode";
 import { Api } from './api';
 import { Ui } from './ui';
 import os from 'os';
+import { Repository } from './repository/repository';
+import { Workflow } from './workflow/workflow';
 
 const memoryStore = require('memorystore')(session);
 /**
  * @description hosts all microservice functionalities
  */
 export class Server {
+  public static instance: Server;
   private static _logger: winston.Logger;
-
   private static amqpTypes = ["fanout", "direct", "topic", "headers"];
 
   public http!: http.Server;
@@ -44,8 +46,11 @@ export class Server {
   }[] = [];
   protected readonly _dbs: Db<any>[] = [];
   protected readonly _amqp: {[key : string] : IAmqpOptions} = {};
+  protected readonly _repositories: { [key: string]: Repository<any> } = {};
+  protected readonly _workflows: { [key: string]: Workflow<any> } = {};
 
   public constructor(options: IServerOptions) {
+    Server.instance = this;
     this.options = options;
     try {
       if (!options.loggerOptions) options.loggerOptions = {};
@@ -128,6 +133,9 @@ export class Server {
         this._amqp = options.amqp;
       }
 
+      this._repositories = options.repositories || {};
+      this._workflows = options.workflows || {};
+
     } catch (error) {
       Server.logger.log('crit', (error as Error).message, {
         error: error,
@@ -140,10 +148,13 @@ export class Server {
 
   public static get logger(): winston.Logger { return Server._logger; }
 
+  public get repositories(): { readonly [key: string]: Repository<any> } { return this._repositories; }
+  public get workflows(): { readonly [key: string]: Workflow<any> } { return this._workflows; }
   public get httpPort(): number | undefined { return this.options.httpPort; }
   public get app(): express.Application {
     return this._app;
   }
+  public get dbs(): Db<any>[] { return this._dbs || []; }
 
   public async stop(killProcess = true): Promise<void> {
     if (this.http) {

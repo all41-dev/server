@@ -3,6 +3,8 @@ import { Db, IDbOptions } from '@all41-dev/db-tools';
 import { Ui } from './ui';
 import { LoggerOptions } from 'winston';
 import AMQP from 'amqplib';
+import { Repository } from './repository/repository';
+import { Workflow } from './workflow/workflow';
 
 export interface IServerOptions {
   consoleLogLevel?: string;
@@ -13,6 +15,8 @@ export interface IServerOptions {
   jobs?: IJobOptions | IJobOptions[];
   amqp?: {[key: string]: IAmqpOptions};
   statics?: IStaticRouteOptions | IStaticRouteOptions[];
+  repositories?: { [key: string]: Repository<any> };
+  workflows?: { [key: string]: Workflow<any> };
   loggerOptions?: LoggerOptions;
   skipJobScheduleAtStartup?: boolean;
   mute?: boolean;

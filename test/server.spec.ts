@@ -5,6 +5,7 @@ import { Api } from '../src/api';
 import { Router } from 'express';
 import { ControllerBase } from '../src/controller-base';
 import { Db } from '@all41-dev/db-tools';
+import { TestDb } from "../src/test/test-db";
 import { Table, Model, PrimaryKey, AutoIncrement, Column, AllowNull, Unique, DataType } from 'sequelize-typescript';
 import chaiHttp = require('chai-http');
 import AMQP from "amqplib";
@@ -26,7 +27,7 @@ export class DbPerson extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column(DataType.INTEGER)
-  public id!: number;
+  public uuid!: number;
 
   @AllowNull(false)
   @Unique
@@ -34,13 +35,6 @@ export class DbPerson extends Model {
   public name!: string;
 }
 
-export class TestDb extends Db<TestDb> {
-  public async init(): Promise<void> {
-    this._init();
-    this.sequelize.addModels([DbPerson]);
-  }
-
-}
 
 export class TestController extends ControllerBase {
   public static create(): Router {
