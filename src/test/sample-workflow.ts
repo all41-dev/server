@@ -20,13 +20,13 @@ export class SampleWorkflow extends Workflow<SampleTable> implements Workflow<Sa
     this.actions = {
       post: {
         condition: (context) => context.source === 'api',
+        execute: async (data) => this.actors.sequelize.repository.post(data as SampleTable),
+        doAwait: false,
         successors: [{
           condition: (context) => context.data instanceof SampleTable,
           successors: [],
           execute: (data) => this.actors.amqp.repository.post(data as SampleTable),
         }],
-        execute: async (data) => this.actors.sequelize.repository.post(data as SampleTable),
-        doAwait: false,
       }
     }
   }
