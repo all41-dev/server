@@ -1,5 +1,5 @@
 import { Model, Repository as SequelizeNativeRepository } from 'sequelize-typescript';
-import { FindOptions, BuildOptions, Utils as SQLUtils } from 'sequelize';
+import { FindOptions, SaveOptions, BuildOptions, Utils as SQLUtils } from 'sequelize';
 import { Server } from '../server';
 import { IPkName, Repository, IRepositoryReadable, IRepositoryWritable } from './repository';
 import { Utils } from "../utils";
@@ -30,8 +30,12 @@ export class RepositorySequelize<T extends Model<T> & IPkName<T>> implements Rep
   }
 
 
-  public async getByKey(key: any): Promise<T> {
-    const result = await this._sequelizeRepository.findByPk(key);
+  public async getByKey(key: any, options?: FindOptions<T>): Promise<T> {
+    if ([undefined, null].includes(key)) throw new Error('getByKey invoked without key value');
+
+    const localOptions = {[this._sequelizeRepository.primaryKeyAttribute]: key};
+    Object.assign(localOptions, options);
+    const result = await this._sequelizeRepository.findOne(options);
     if (result === null) throw new Error(`No record found with key '${key} on repository '${this.modelType.constructor.name}`);
     Utils.DateToDateTime(result);
     return result;
@@ -41,9 +45,13 @@ export class RepositorySequelize<T extends Model<T> & IPkName<T>> implements Rep
     Utils.DateToDateTime(result);
     return result;
   }
-  public async patch(key: any, object: Partial<T>): Promise<T> {
+  public async patch(key: any, object: Partial<T>, options?: SaveOptions<T>): Promise<T> {
     const foundRecord = await this.getByKey(key);
-    const result = await foundRecord.set(object).save();
+    
+    let result = await foundRecord.set(object).save();
+    if (options) {
+      result = await this.getByKey(options);
+    }
     return result;
   }
 }

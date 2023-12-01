@@ -1,11 +1,11 @@
 export interface IPkName<T> { readonly pkName: keyof T }
 export interface IRepositoryReadable<T extends IPkName<T>> {
-  getByKey(key: any, ): Promise<T>;
+  getByKey(key: any, options?: any): Promise<T>;
   get(options: any): Promise<T[]>;
 }
 export interface IRepositoryWritable<T extends IPkName<T>> {
-  patch(key: any, object: Partial<T>): Promise<T>;
-  post(object: T): Promise<T>;
+  patch(key: any, object: Partial<T>, options?: any): Promise<T>;
+  post(object: T, options?: any): Promise<T>;
   delete(key: any): Promise<void>;
 }
 

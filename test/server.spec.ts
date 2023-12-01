@@ -3,7 +3,7 @@ import * as chai from 'chai';
 // import chaiHttp from 'chai-http';
 import { Api } from '../src/api';
 import { Router } from 'express';
-import { ControllerBase } from '../src/controller-base';
+import { ControllerBase } from '../src/controller/controller-base';
 import { Db } from '@all41-dev/db-tools';
 import { TestDb } from "../src/test/test-db";
 import { Table, Model, PrimaryKey, AutoIncrement, Column, AllowNull, Unique, DataType } from 'sequelize-typescript';

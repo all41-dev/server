@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/member-ordering */
 import { Request, Response, Router } from 'express';
-import { EntityRequest, PkPropType } from './entity-request';
+import { EntityRequest, PkPropType } from '../entity-request';
 import { ControllerBase } from './controller-base';
 import { Model } from 'sequelize-typescript';
-import { Server } from './server';
+import { Server } from '../server';
 
 /**
  * @example .

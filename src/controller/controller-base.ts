@@ -4,17 +4,27 @@ import { Request, Response, NextFunction } from 'express';
 import express from 'express';
 import Jwt from 'jsonwebtoken';
 import NodeRSA from 'node-rsa';
-import { Server } from './server';
+import { Server } from '../server';
+import { ParsedQs } from "qs";
+import { RequestHandler, Router } from 'express';
+
+export interface IRoutesDefinition {
+  verb: 'all' | 'get' | 'post' | 'put' | 'delete' | 'patch' | 'options' | 'head';
+  path: string;
+  handlers: RequestHandler<any, any, any, ParsedQs, Record<string, any>> | Array<RequestHandler<any, any, any, ParsedQs, Record<string, any>>>
+}
 
 export abstract class ControllerBase {
   private static _certsCache: any = {};
 
+  public routes: IRoutesDefinition[];
   protected title: string;
   private scripts: string[];
 
   public constructor() {
     this.title = '';
     this.scripts = [];
+    this.routes = [];
   }
 
   /*Returns Middleware for checking Access-Token*/
@@ -154,6 +164,9 @@ export abstract class ControllerBase {
 
     return token;
   }
+  public addRoutes(router: Router, ...routes: Array<IRoutesDefinition>) {
+    routes.forEach((route) => router[route.verb](route.path, route.handlers));
+  }
 
   public addScript(src: string): ControllerBase {
     this.scripts.push(src);
@@ -167,5 +180,11 @@ export abstract class ControllerBase {
     res.locals.title = this.title;
 
     res.render(view, options);
+  }
+  protected createBase(router?: Router) {
+    const usedRouter = router || Router();
+    this.addRoutes(usedRouter, ...this.routes);
+
+    return usedRouter;
   }
 }
