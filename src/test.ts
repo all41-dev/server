@@ -50,7 +50,7 @@ server.start().then(async () => {
   // const res = await repo.getByKey('7fdac63b-bffc-440d-9ae2-813f123ba113');
   const wf = server.workflows.sample as Workflow<SampleTable>;
   const res = await wf.run('api', { exchangeCode: 'bar' });
-  console.log(res);
+  // console.log(res);
   
   // server.stop().then(() => {
   //   setTimeout(() => {
