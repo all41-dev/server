@@ -37,12 +37,12 @@ export class RepositorySequelize<T extends Model<T> & IPkName<T>> implements Rep
     Object.assign(localOptions, options);
     const result = await this._sequelizeRepository.findOne(options);
     if (result === null) throw new Error(`No record found with key '${key} on repository '${this.modelType.constructor.name}`);
-    Utils.DateToDateTime(result);
+    Utils.inst.dateToDateTime(result);
     return result;
   }
   public async get(options: FindOptions<T>): Promise<T[]> {
     const result = await this._sequelizeRepository.findAll(options);
-    Utils.DateToDateTime(result);
+    Utils.inst.dateToDateTime(result);
     return result;
   }
   public async patch(key: any, object: Partial<T>, options?: SaveOptions<T>): Promise<T> {
