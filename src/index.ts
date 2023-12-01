@@ -5,3 +5,7 @@ export * from './entity-request';
 export * from './controller-base';
 export * from './request-controller';
 export * from './ui';
+export * from './repository/repository';
+export * from './repository/repository-amqp';
+export * from './repository/repository-sequelize';
+export * from './workflow/workflow';
