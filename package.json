@@ -16,6 +16,8 @@
     "test-manual": "mocha -r ts-node/register test/**/*.spec.ts",
     "preversion": "run-p test lint build",
     "postversion": "git push && git push --tags && npm publish --access public",
+    "version:alpha": "npm version prerelease --preid=alpha",
+    "version:beta": "npm version prerelease --preid=beta",
     "ncu:view": "ncu -x pkgtoignore",
     "ncu:upd": "ncu -x pkgtoignore -u"
   },
