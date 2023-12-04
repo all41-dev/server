@@ -4,7 +4,7 @@ import { ControllerBase } from './controller-base';
 import { IPkName, IRepositoryReadable, IRepositoryWritable, Repository } from '../repository/repository';
 import { Utils } from '../utils';
 
-export class ControllerRepository<R extends Repository<T> & IRepositoryReadable<T> & IRepositoryWritable<T>, T extends IPkName<T> = any> extends ControllerBase {
+export class ControllerRepository<R extends Repository<T> & Partial<IRepositoryReadable<T>> & Partial<IRepositoryWritable<T>>, T extends IPkName<T> = any> extends ControllerBase {
   private _repository!: R;
 
   constructor() {
