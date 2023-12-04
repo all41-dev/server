@@ -1,10 +1,14 @@
 /* eslint-disable @typescript-eslint/member-ordering */
 import { Request, Response, Router } from 'express';
-import { ControllerBase } from './controller-base';
+import { ControllerBase, IRoutesDefinition } from './controller-base';
 import { IPkName, IRepositoryReadable, IRepositoryWritable, Repository } from '../repository/repository';
 import { Utils } from '../utils';
 
-export class ControllerRepository<R extends Repository<T> & Partial<IRepositoryReadable<T>> & Partial<IRepositoryWritable<T>>, T extends IPkName<T> = any> extends ControllerBase {
+export interface IControllerRepository<R extends Repository<T> & Partial<IRepositoryReadable<T>> & Partial<IRepositoryWritable<T>>, T extends IPkName<T> = any> {
+  routes: IRoutesDefinition[];
+  create(repoType: R | (new () => R), router?: Router): Router;
+}
+export class ControllerRepositoryReadWrite<R extends Repository<T> & IRepositoryReadable<T> & IRepositoryWritable<T>, T extends IPkName<T> = any> extends ControllerBase {
   private _repository!: R;
 
   constructor() {
@@ -12,7 +16,7 @@ export class ControllerRepository<R extends Repository<T> & Partial<IRepositoryR
     this.routes.push(...new ControllerRepositoryReadonly<T, R>().routes);
     this.routes.push(...new ControllerRepositoryWriteonly<T, R>().routes);
   }
-  public create(repoType: R | (new () => R), router?: Router) {
+  public create(repoType: R | (new () => R), router?: Router): Router {
     this._repository = typeof repoType === 'object' ? repoType : new repoType();
     const usedRouter = super.createBase(router);
 
