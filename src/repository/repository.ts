@@ -12,6 +12,6 @@ export interface IRepositoryWritable<T extends IPkName<T>> {
 /**
  * @template T model type served by the repository
  */
-export interface Repository<T> {
+export interface Repository<T extends IPkName<T>> {
   readonly modelType: new (plainObj?: Partial<T>) => T;
 }
