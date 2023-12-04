@@ -1,12 +1,11 @@
 import os from 'os';
 import fetch from "@all41-dev/node-fetch";
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, RequestHandler, Router} from 'express';
 import express from 'express';
 import Jwt from 'jsonwebtoken';
 import NodeRSA from 'node-rsa';
 import { Server } from '../server';
 import { ParsedQs } from "qs";
-import { RequestHandler, Router } from 'express';
 
 export interface IRoutesDefinition {
   verb: 'all' | 'get' | 'post' | 'put' | 'delete' | 'patch' | 'options' | 'head';
@@ -165,7 +164,21 @@ export abstract class ControllerBase {
     return token;
   }
   public addRoutes(router: Router, ...routes: Array<IRoutesDefinition>) {
-    routes.forEach((route) => router[route.verb](route.path, route.handlers));
+    routes.forEach((route) => router[route.verb](route.path, this.injectThis(route.handlers)));
+  }
+
+  public injectThis(handlers: RequestHandler<any, any, any, ParsedQs, Record<string, any>> | Array<RequestHandler<any, any, any, ParsedQs, Record<string, any>>>)
+    : RequestHandler<any, any, any, ParsedQs, Record<string, any>> | Array<RequestHandler<any, any, any, ParsedQs, Record<string, any>>> {
+    const localHandlers = Array.isArray(handlers) ? handlers : [handlers];
+    const result = localHandlers.map((ctHhandler) => {
+      const thisHandler = (req: Request, res: Response, next: NextFunction) => {
+        // adding this context
+        (req as any)._this = this;
+        ctHhandler(req, res, next);
+      };
+      return thisHandler;
+    });
+    return result;
   }
 
   public addScript(src: string): ControllerBase {

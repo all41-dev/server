@@ -17,6 +17,7 @@ export class ControllerRepositoryReadWrite<R extends Repository<T> & IRepository
     this.routes.push(...new ControllerRepositoryWriteonly<T, R>().routes);
   }
   public create(repoType: R | (new () => R), router?: Router): Router {
+    if (!repoType) throw new Error('repoType not provided');
     this._repository = typeof repoType === 'object' ? repoType : new repoType();
     const usedRouter = super.createBase(router);
 

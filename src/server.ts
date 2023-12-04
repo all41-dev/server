@@ -96,6 +96,9 @@ export class Server {
         }
       }
 
+      this._repositories = options.repositories || {};
+      this._workflows = options.workflows || {};
+
       // register apis
       if (options.apis) {
         const apiArray = Array.isArray(options.apis) ? options.apis : [options.apis];
@@ -132,9 +135,6 @@ export class Server {
       if (options.amqp) {
         this._amqp = options.amqp;
       }
-
-      this._repositories = options.repositories || {};
-      this._workflows = options.workflows || {};
 
     } catch (error) {
       Server.logger.log('crit', (error as Error).message, {
