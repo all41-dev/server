@@ -286,11 +286,16 @@ export class Server {
   }
 
   public async executeJob(code: string): Promise<any> {
-    const job = this._jobs.find((j) => j.code === code);
-    if (!job) throw new Error(`job '${code}' not found, can't be executed.`);
-    const resp = job.instance.fireOnTick();
-    Server.logger.info(`job ${job.name} ad-hoc execution started`);
-    return resp;
+    try {
+      const job = this._jobs.find((j) => j.code === code);
+      if (!job) throw new Error(`job '${code}' not found, can't be executed.`);
+      const resp = job.instance.fireOnTick();
+      Server.logger.info(`job ${job.name} ad-hoc execution started`);
+      return resp;
+    } catch (err: unknown) {
+      const error = err as Error;
+      Server.logger.error(error.message, error);
+    }
   }
   public isJobScheduled(code: string): boolean {
     const job = this._jobs.find((j) => j.code === code);
