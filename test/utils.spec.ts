@@ -60,5 +60,17 @@ describe('Utils class', () => {
       chai.expect(obj.subObj[0]).to.instanceOf(DateTime)
       done();
     }).timeout(0);
+    it('Array of Objects', (done) => {
+      const obj = {
+        subObj: [
+          new Date()
+        ],
+      };
+
+      Utils.inst.dateToDateTime(obj);
+
+      chai.expect(obj.subObj[0]).to.instanceOf(DateTime)
+      done();
+    }).timeout(0);
   });
 });

@@ -49,7 +49,7 @@ export class ControllerRepositoryReadonly<T extends IPkName<T>, R extends Reposi
       const where = req.query.filter;// TODO will probably not work "as is"
       const options = where || include ? { where, include } : undefined;
 
-      const result = await this._repository.get(options);
+      const result = await (req as any)._this._repository.get(options);
       res.json(result);
     } catch (err: unknown) {
       Utils.inst.handleCatch(err as Error, res);
