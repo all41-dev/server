@@ -170,7 +170,11 @@ export abstract class ControllerBase {
   public registerRoutes(router: Router, ...routes: Array<IRouteDefinition>) {
     routes.forEach((route) => router[route.verb](route.path, this.injectThis(route.handlers)));
   }
-
+  public registerRouteBySignature(router: Router, verb: 'all' | 'get' | 'post' | 'put' | 'delete' | 'patch' | 'options' | 'head', path: string) {
+    const foundRoute = this.routes.find((r) => r.verb === verb && r.path === path);
+    if (!foundRoute) throw new Error(`route ${verb}:${path} not found`);
+    router[verb](path, foundRoute.handlers);
+  }
 
   public addScript(src: string): ControllerBase {
     this.scripts.push(src);
