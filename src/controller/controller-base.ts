@@ -163,17 +163,22 @@ export abstract class ControllerBase {
 
     return token;
   }
-  public defineRoutes(...routes: IRouteDefinition[]) {
+  public defineRoutes(...routes: IRouteDefinition[]): void {
     routes.forEach((r) => this.defineRoute(r));
   }
   
   public registerRoutes(router: Router, ...routes: Array<IRouteDefinition>) {
     routes.forEach((route) => router[route.verb](route.path, this.injectThis(route.handlers)));
   }
-  public registerRouteBySignature(router: Router, verb: 'all' | 'get' | 'post' | 'put' | 'delete' | 'patch' | 'options' | 'head', path: string) {
-    const foundRoute = this.routes.find((r) => r.verb === verb && r.path === path);
-    if (!foundRoute) throw new Error(`route ${verb}:${path} not found`);
-    router[verb](path, foundRoute.handlers);
+  // public registerRouteBySignature(router: Router, verb: 'all' | 'get' | 'post' | 'put' | 'delete' | 'patch' | 'options' | 'head', path: string) {
+  //   const foundRoute = this.routes.find((r) => r.verb === verb && r.path === path);
+  //   if (!foundRoute) throw new Error(`route ${verb}:${path} not found`);
+  //   router[verb](path, foundRoute.handlers);
+  // }
+  public defineRouteBeforeSignature(afterRoute: { verb: 'all' | 'get' | 'post' | 'put' | 'delete' | 'patch' | 'options' | 'head', path: string }, routeDef: IRouteDefinition): void {
+    const foundRouteIdx = this.routes.findIndex((r) => r.verb === afterRoute.verb && r.path === afterRoute.path);
+    if (foundRouteIdx === -1) throw new Error(`route ${afterRoute.verb}:${afterRoute.path} not found`);
+    this.routes.splice(foundRouteIdx, 0, routeDef);
   }
 
   public addScript(src: string): ControllerBase {
