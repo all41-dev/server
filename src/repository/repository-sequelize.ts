@@ -41,6 +41,14 @@ export class RepositorySequelize<T extends Model<T> & IPkName<T>> implements Rep
     return result;
   }
   public async get(options: FindOptions<T>): Promise<T[]> {
+    // in case repository mode has limitations
+    // const result = await this.modelType.findAll(options);
+
+    // const foo: Includeable = { 
+    //   isAliased: true,
+    // };
+  
+
     const result = await this._sequelizeRepository.findAll(options);
     Utils.inst.dateToDateTime(result);
     return result;

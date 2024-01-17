@@ -9,15 +9,19 @@ import { Server } from '../server';
  * @example .
  */
 export class RequestController<ENT extends EntityRequest<Model, any & PkPropType>> extends ControllerBase {
-  public create(er: new() => ENT, router?: Router) {
-    const usedRouter = router || Router();
+  constructor(er: new () => ENT) {
+    super();
+    this.defineRoutes(
+      { verb: 'get', path: '/', handlers: (req, res) => this.getAll(req, res, new er) },
+      { verb: 'get', path: '"/:id"', handlers: (req, res) => this.getById(req, res, new er) },
+      { verb: 'post', path: '/', handlers: (req, res) => this.post(req, res, new er) },
+      { verb: 'patch', path: '"/:id"', handlers: (req, res) => this.patch(req, res, new er) },
+      { verb: 'delete', path: '"/:id"', handlers: (req, res) => this.delete(req, res, new er) },
+    )
+  }
 
-    usedRouter.get("/", (req, res) => this.getAll(req, res, new er));
-    usedRouter.get("/:id", (req, res) => this.getById(req, res, new er));
-    usedRouter.post("/", (req, res) => this.post(req, res, new er));
-    usedRouter.patch("/:id", (req, res) => this.patch(req, res, new er));
-    usedRouter.delete("/:id", (req, res) => this.delete(req, res, new er));
-
+  public create(router?: Router) {
+    const usedRouter = super.createBase(router);
     return usedRouter;
   }
 

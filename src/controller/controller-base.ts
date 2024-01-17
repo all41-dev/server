@@ -7,7 +7,7 @@ import NodeRSA from 'node-rsa';
 import { Server } from '../server';
 import { ParsedQs } from "qs";
 
-export interface IRoutesDefinition {
+export interface IRouteDefinition {
   verb: 'all' | 'get' | 'post' | 'put' | 'delete' | 'patch' | 'options' | 'head';
   path: string;
   handlers: RequestHandler<any, any, any, ParsedQs, Record<string, any>> | Array<RequestHandler<any, any, any, ParsedQs, Record<string, any>>>
@@ -16,7 +16,7 @@ export interface IRoutesDefinition {
 export abstract class ControllerBase {
   private static _certsCache: any = {};
 
-  public routes: IRoutesDefinition[];
+  public routes: IRouteDefinition[];
   protected title: string;
   private scripts: string[];
 
@@ -163,23 +163,14 @@ export abstract class ControllerBase {
 
     return token;
   }
-  public addRoutes(router: Router, ...routes: Array<IRoutesDefinition>) {
+  public defineRoutes(...routes: IRouteDefinition[]) {
+    routes.forEach((r) => this.defineRoute(r));
+  }
+  
+  public registerRoutes(router: Router, ...routes: Array<IRouteDefinition>) {
     routes.forEach((route) => router[route.verb](route.path, this.injectThis(route.handlers)));
   }
 
-  public injectThis(handlers: RequestHandler<any, any, any, ParsedQs, Record<string, any>> | Array<RequestHandler<any, any, any, ParsedQs, Record<string, any>>>)
-    : RequestHandler<any, any, any, ParsedQs, Record<string, any>> | Array<RequestHandler<any, any, any, ParsedQs, Record<string, any>>> {
-    const localHandlers = Array.isArray(handlers) ? handlers : [handlers];
-    const result = localHandlers.map((ctHhandler) => {
-      const thisHandler = (req: Request, res: Response, next: NextFunction) => {
-        // adding this context
-        (req as any)._this = this;
-        ctHhandler(req, res, next);
-      };
-      return thisHandler;
-    });
-    return result;
-  }
 
   public addScript(src: string): ControllerBase {
     this.scripts.push(src);
@@ -196,8 +187,30 @@ export abstract class ControllerBase {
   }
   protected createBase(router?: Router) {
     const usedRouter = router || Router();
-    this.addRoutes(usedRouter, ...this.routes);
+    this.registerRoutes(usedRouter, ...this.routes);
 
     return usedRouter;
+  }
+  private injectThis(handlers: RequestHandler<any, any, any, ParsedQs, Record<string, any>> | Array<RequestHandler<any, any, any, ParsedQs, Record<string, any>>>)
+    : RequestHandler<any, any, any, ParsedQs, Record<string, any>> | Array<RequestHandler<any, any, any, ParsedQs, Record<string, any>>> {
+    const localHandlers = Array.isArray(handlers) ? handlers : [handlers];
+    const result = localHandlers.map((ctHhandler) => {
+      const thisHandler = (req: Request, res: Response, next: NextFunction) => {
+        // adding this context
+        (req as any)._this = this;
+        ctHhandler(req, res, next);
+      };
+      return thisHandler;
+    });
+    return result;
+  }
+  private defineRoute(route: IRouteDefinition) {
+    const existingRoute = this.routes.find((r) => r.verb === route.verb && r.path === route.path);
+
+    if (existingRoute) {
+      existingRoute.handlers = route.handlers;
+    } else {
+      this.routes.push(route);
+    }
   }
 }

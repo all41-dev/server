@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/member-ordering */
 import { Request, Response, Router } from 'express';
-import { ControllerBase, IRoutesDefinition } from './controller-base';
+import { ControllerBase, IRouteDefinition } from './controller-base';
 import { IPkName, IRepositoryReadable, IRepositoryWritable, Repository } from '../repository/repository';
 import { Utils } from '../utils';
 
 export interface IControllerRepository<R extends Repository<T> & Partial<IRepositoryReadable<T>> & Partial<IRepositoryWritable<T>>, T extends IPkName<T> = any> {
-  routes: IRoutesDefinition[];
+  routes: IRouteDefinition[];
   create(repoType: R | (new () => R), router?: Router): Router;
 }
 export class ControllerRepositoryReadWrite<R extends Repository<T> & IRepositoryReadable<T> & IRepositoryWritable<T>, T extends IPkName<T> = any> extends ControllerBase {
@@ -13,8 +13,8 @@ export class ControllerRepositoryReadWrite<R extends Repository<T> & IRepository
 
   constructor() {
     super();
-    this.routes.push(...new ControllerRepositoryReadonly<T, R>().routes);
-    this.routes.push(...new ControllerRepositoryWriteonly<T, R>().routes);
+    this.defineRoutes(...new ControllerRepositoryReadonly<T, R>().routes);
+    this.defineRoutes(...new ControllerRepositoryWriteonly<T, R>().routes);
   }
   public create(repoType: R | (new () => R), router?: Router): Router {
     if (!repoType) throw new Error('repoType not provided');
@@ -30,7 +30,7 @@ export class ControllerRepositoryReadonly<T extends IPkName<T>, R extends Reposi
 
   public constructor() {
     super();
-    this.routes.push(
+    this.defineRoutes(
       { verb: 'get', path: "/", handlers: this.getAll },
       { verb: 'get', path: '/:id', handlers: this.getById },
     );
@@ -74,7 +74,7 @@ export class ControllerRepositoryWriteonly<T extends IPkName<T>, R extends Repos
 
   public constructor() {
     super();
-    this.routes.push(
+    this.defineRoutes(
       { verb: 'post', path: "/", handlers: this.post },
       { verb: 'patch', path: "/:id", handlers: this.patch },
       { verb: 'delete', path: "/:id", handlers: this.delete },
