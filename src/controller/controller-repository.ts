@@ -23,6 +23,11 @@ export class ControllerRepositoryReadWrite<R extends Repository<T> & IRepository
 
     return usedRouter;
   }
+  public getAll = ControllerRepositoryReadonly.prototype.getAll;
+  public getById = ControllerRepositoryReadonly.prototype.getById;
+  public post = ControllerRepositoryWriteonly.prototype.post;
+  public patch = ControllerRepositoryWriteonly.prototype.patch;
+  public delete = ControllerRepositoryWriteonly.prototype.delete;
 }
 
 export class ControllerRepositoryReadonly<T extends IPkName<T>, R extends Repository<T> & IRepositoryReadable<T>> extends ControllerBase {
