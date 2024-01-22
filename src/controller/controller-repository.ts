@@ -65,7 +65,7 @@ export class ControllerRepositoryReadonly<T extends IPkName<T>, R extends Reposi
     try {
       const include = req.query.include;
       const options = include ? { include } : undefined;
-      const result = await this._repository.getByKey(req.params.id, options);
+      const result = await (req as any)._this._repository.getByKey(req.params.id, options);
 
       res.json(result);
     } catch (err: unknown) {
@@ -97,7 +97,7 @@ export class ControllerRepositoryWriteonly<T extends IPkName<T>, R extends Repos
       const include = req.query.include;
       const options = include ? { include } : undefined;
 
-      const result = await this._repository.post(req.body, options);
+      const result = await (req as any)._this._repository.post(req.body, options);
       res.json(result);
     } catch (err: unknown) {
       Utils.inst.handleCatch(err as Error, res);
@@ -109,7 +109,7 @@ export class ControllerRepositoryWriteonly<T extends IPkName<T>, R extends Repos
       const include = req.query.include;
       const options = include ? { include } : undefined;
 
-      const result = await this._repository.patch(req.params.id, req.body, options);
+      const result = await (req as any)._this._repository.patch(req.params.id, req.body, options);
       res.json(result);
     } catch (err: unknown) {
       Utils.inst.handleCatch(err as Error, res);
@@ -118,7 +118,7 @@ export class ControllerRepositoryWriteonly<T extends IPkName<T>, R extends Repos
 
   public async delete(req: Request, res: Response): Promise<void> {
     try {
-      const result = await this._repository.delete(req.params.id);
+      const result = await (req as any)._this._repository.delete(req.params.id);
       res.json(result);
     } catch (err: unknown) {
       Utils.inst.handleCatch(err as Error, res);
