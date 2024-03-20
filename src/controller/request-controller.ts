@@ -13,10 +13,10 @@ export class RequestController<ENT extends EntityRequest<Model, any & PkPropType
     super();
     this.defineRoutes(
       { verb: 'get', path: '/', handlers: (req, res) => this.getAll(req, res, new er) },
-      { verb: 'get', path: '"/:id"', handlers: (req, res) => this.getById(req, res, new er) },
+      { verb: 'get', path: '/:id', handlers: (req, res) => this.getById(req, res, new er) },
       { verb: 'post', path: '/', handlers: (req, res) => this.post(req, res, new er) },
-      { verb: 'patch', path: '"/:id"', handlers: (req, res) => this.patch(req, res, new er) },
-      { verb: 'delete', path: '"/:id"', handlers: (req, res) => this.delete(req, res, new er) },
+      { verb: 'patch', path: '/:id', handlers: (req, res) => this.patch(req, res, new er) },
+      { verb: 'delete', path: '/:id', handlers: (req, res) => this.delete(req, res, new er) },
     )
   }
 
