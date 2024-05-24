@@ -49,7 +49,7 @@ server.start().then(async () => {
   // const repo = server.repositories.sequelizeBase as RepositorySequelize<SampleTable>;
   // const res = await repo.getByKey('7fdac63b-bffc-440d-9ae2-813f123ba113');
   const wf = server.workflows.sample as Workflow<SampleTable>;
-  const res = await wf.run('api', { exchangeCode: 'bar' });
+  const res = await wf.run('api', 'post', { exchangeCode: 'bar' });
   // console.log(res);
   
   // server.stop().then(() => {
