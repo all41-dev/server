@@ -155,6 +155,7 @@ export class Server {
     return this._app;
   }
   public get dbs(): Db<any>[] { return this._dbs || []; }
+  public get amqp(): {[key : string] : IAmqpOptions} { return this._amqp; }
 
   public async stop(killProcess = true): Promise<void> {
     if (this.http) {
