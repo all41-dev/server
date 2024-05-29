@@ -1,7 +1,5 @@
 import { SampleAMQPRepository, SampleSequelizeRepository, SampleTable } from "../test/sample-repository";
 import { Action, Actor, Context, Workflow } from "../workflow/workflow";
-import { IRepositoryWritableDb } from "../repository/repository";
-import { IRepositoryMessaging } from "../repository/repository-messaging";
 
 export class SampleWorkflow<C extends Context = Context> extends Workflow<SampleTable, C> implements Workflow<SampleTable, C>{
   modelType: new (plainObj?: Partial<SampleTable> | undefined) => SampleTable;

@@ -2,7 +2,6 @@ import { Model, Table, PrimaryKey, DataType, Column, AllowNull } from 'sequelize
 import { IRepositoryReadable, IRepositoryWritable, Repository } from '../repository/repository';
 import { RepositorySequelize } from '../repository/repository-sequelize';
 import { DateTime } from "luxon";
-import { FindOptions } from 'sequelize';
 
 export class SampleSequelizeRepository extends RepositorySequelize<SampleTable> implements Repository<SampleTable> {
   constructor(options?: { dbName: string }) {
