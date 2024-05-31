@@ -3,10 +3,17 @@ export interface IRepositoryReadable<T extends IPkName<T> = any> {
   getByKey(key: any, options?: any): Promise<T>;
   get(options: any): Promise<T[]>;
 }
+
 export interface IRepositoryWritable<T extends IPkName<T> = any> {
+  patch(key: any, object: Partial<T>, options?: any): Promise<T | void>;
+  post(object: T, options?: any): Promise<T | void>;
+  delete(key: any, options?: any): Promise<void>;
+}
+
+export interface IRepositoryWritableDb<T extends IPkName<T> = any> extends IRepositoryWritable<T> {
   patch(key: any, object: Partial<T>, options?: any): Promise<T>;
   post(object: T, options?: any): Promise<T>;
-  delete(key: any): Promise<void>;
+  delete(key: any, options?: any): Promise<void>;
 }
 
 /**

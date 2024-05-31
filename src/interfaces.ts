@@ -52,8 +52,8 @@ export interface IUiOptions<T extends Ui<any>> extends IRouteOptions {
 }
 
 export interface IAmqpOptions extends IMuteable {
-  AMQP_URL: string | "amqp://localhost";
-  connection: AMQP.Connection | undefined;
+  params: AMQP.Options.Connect;
+  connection?: AMQP.Connection;
   channels: { [key: string]: AMQP.Channel };
 }
 

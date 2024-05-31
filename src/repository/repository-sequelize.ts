@@ -1,10 +1,10 @@
 import { Model, Repository as SequelizeNativeRepository } from 'sequelize-typescript';
 import { FindOptions, SaveOptions, BuildOptions, Utils as SQLUtils } from 'sequelize';
 import { Server } from '../server';
-import { IPkName, Repository, IRepositoryReadable, IRepositoryWritable } from './repository';
+import { IPkName, Repository, IRepositoryReadable, IRepositoryWritableDb } from './repository';
 import { Utils } from "../utils";
 
-export class RepositorySequelize<T extends Model<T> & IPkName<T>> implements Repository<T>, IRepositoryReadable<T>, IRepositoryWritable<T> {
+export class RepositorySequelize<T extends Model<T> & IPkName<T>> implements Repository<T>, IRepositoryReadable<T>, IRepositoryWritableDb<T> {
   public readonly modelType: new (values?: SQLUtils.MakeNullishOptional<T> | Partial<T>, options?: BuildOptions) => T;
   public readonly dbName?: string;
 
