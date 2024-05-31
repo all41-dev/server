@@ -1,18 +1,18 @@
 import { IPkName, IRepositoryWritable } from "../repository/repository"
 
-export interface Context {
+export interface WorkflowContext {
   source: string;
-  data: {record: any, additionnal?: any};
+actionContext: {record: any, [key : string]: any};
 }
 // export type Context = ContextStd & any;
 
-export interface Workflow<T extends IPkName<T>, C extends Context = Context> {
+export interface Workflow<T extends IPkName<T>, C extends WorkflowContext = WorkflowContext> {
   readonly modelType: new (plainObj?: Partial<T>) => T;
   actors: { [key: string]: Actor<T> }
   actions: { [key: string]: Action<T, C> };
 }
 
-export class Workflow<T extends IPkName<T>, C extends Context = Context> {
+export class Workflow<T extends IPkName<T>, C extends WorkflowContext = WorkflowContext> {
   public async run(ctx : C): Promise<(T | void)[]> {
     const electedKeys = Object.keys(this.actions)
       .filter((key) => this.actions[key].condition(ctx));
@@ -22,8 +22,8 @@ export class Workflow<T extends IPkName<T>, C extends Context = Context> {
   private async executeAction(action: Action<T, C>, ctx : C): Promise<T |void> {
     {
       const res = action.doAwait ?
-        await action.execute(ctx.data) :
-        action.execute(ctx.data);
+        await action.execute(ctx.actionContext) :
+        action.execute(ctx.actionContext);
       const electedSuccessors = action.successors.filter((successor) => successor.condition(ctx));
       const successorsResult = Promise.all(electedSuccessors.map(async (successor) => this.executeAction(successor, ctx)));
       action.doAwait ? await successorsResult : successorsResult;
@@ -39,6 +39,6 @@ export interface Actor<T extends IPkName<T>> {
 export interface Action<T, C> {
   successors: Action<T, C>[];
   condition: (context: C) => boolean;
-  execute: (data: {record: Partial<T>, additionnal?: any}) => Promise<T | void>; // void in case of delete
+  execute: (actionContext: {record: Partial<T>, [key : string]: any}) => Promise<T | void>; // void in case of delete
   doAwait?: boolean;
 }

@@ -1,7 +1,7 @@
 import { SampleAMQPRepository, SampleSequelizeRepository, SampleTable } from "../test/sample-repository";
-import { Action, Actor, Context, Workflow } from "../workflow/workflow";
+import { Action, Actor, WorkflowContext, Workflow } from "../workflow/workflow";
 
-export class SampleWorkflow<C extends Context = Context> extends Workflow<SampleTable, C> implements Workflow<SampleTable, C>{
+export class SampleWorkflow<C extends WorkflowContext = WorkflowContext> extends Workflow<SampleTable, C> implements Workflow<SampleTable, C>{
   modelType: new (plainObj?: Partial<SampleTable> | undefined) => SampleTable;
   actors: { [key: string]: Actor<SampleTable>; };
   actions: { [key: string]: Action<SampleTable, C> };
@@ -20,12 +20,12 @@ export class SampleWorkflow<C extends Context = Context> extends Workflow<Sample
     this.actions = {
       post: {
         condition: (context) => context.source === 'api',
-        execute: async (data) => this.actors.sequelize.repository.post(data.record as SampleTable),
+        execute: async (actionContext) => this.actors.sequelize.repository.post(actionContext.record as SampleTable),
         doAwait: false,
         successors: [{
-          condition: (context) => context.data instanceof SampleTable,
+          condition: (context) => context.actionContext instanceof SampleTable,
           successors: [],
-          execute: (data) => this.actors.amqp.repository.post(data.record as SampleTable),
+          execute: (actionContext) => this.actors.amqp.repository.post(actionContext.record as SampleTable),
         }],
       }
     }
