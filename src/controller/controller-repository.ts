@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/member-ordering */
 import { Request, Response, Router } from 'express';
-import { ControllerBase, IRouteDefinition } from './controller-base';
+import { ControllerBase, IControllerInstanceType, IRouteDefinition } from './controller-base';
 import { IPkName, IRepositoryReadable, IRepositoryWritable, Repository } from '../repository/repository';
 import { Utils } from '../utils';
 
@@ -54,7 +54,7 @@ export class ControllerRepositoryReadonly<T extends IPkName<T>, R extends Reposi
       const where = req.query.filter;// TODO will probably not work "as is"
       const options = where || include ? { where, include } : undefined;
 
-      const result = await (req as any)._this._repository.get(options);
+      const result = await (req as IControllerInstanceType<ControllerRepositoryReadonly<T, R>>)._this._repository.get(options);
       res.json(result);
     } catch (err: unknown) {
       Utils.inst.handleCatch(err as Error, res);
@@ -65,7 +65,7 @@ export class ControllerRepositoryReadonly<T extends IPkName<T>, R extends Reposi
     try {
       const include = req.query.include;
       const options = include ? { include } : undefined;
-      const result = await (req as any)._this._repository.getByKey(req.params.id, options);
+      const result = await (req as IControllerInstanceType<ControllerRepositoryReadonly<T, R>>)._this._repository.getByKey(req.params.id, options);
 
       res.json(result);
     } catch (err: unknown) {
@@ -97,7 +97,7 @@ export class ControllerRepositoryWriteonly<T extends IPkName<T>, R extends Repos
       const include = req.query.include;
       const options = include ? { include } : undefined;
 
-      const result = await (req as any)._this._repository.post(req.body, options);
+      const result = await (req as IControllerInstanceType<ControllerRepositoryWriteonly<T, R>>)._this._repository.post(req.body, options);
       res.json(result);
     } catch (err: unknown) {
       Utils.inst.handleCatch(err as Error, res);
@@ -109,7 +109,7 @@ export class ControllerRepositoryWriteonly<T extends IPkName<T>, R extends Repos
       const include = req.query.include;
       const options = include ? { include } : undefined;
 
-      const result = await (req as any)._this._repository.patch(req.params.id, req.body, options);
+      const result = await (req as IControllerInstanceType<ControllerRepositoryWriteonly<T, R>>)._this._repository.patch(req.params.id, req.body, options);
       res.json(result);
     } catch (err: unknown) {
       Utils.inst.handleCatch(err as Error, res);
@@ -118,7 +118,7 @@ export class ControllerRepositoryWriteonly<T extends IPkName<T>, R extends Repos
 
   public async delete(req: Request, res: Response): Promise<void> {
     try {
-      const result = await (req as any)._this._repository.delete(req.params.id);
+      const result = await (req as IControllerInstanceType<ControllerRepositoryWriteonly<T, R>>)._this._repository.delete(req.params.id);
       res.json(result);
     } catch (err: unknown) {
       Utils.inst.handleCatch(err as Error, res);
