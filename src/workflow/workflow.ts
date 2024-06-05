@@ -2,7 +2,7 @@ import { IPkName, IRepositoryWritable } from "../repository/repository"
 
 export interface WorkflowContext {
   source: string;
-actionContext: {record: any, [key : string]: any};
+  actionContext: {[key : string]: any, record: any};
 }
 // export type Context = ContextStd & any;
 
@@ -39,6 +39,6 @@ export interface Actor<T extends IPkName<T>> {
 export interface Action<T, C> {
   successors: Action<T, C>[];
   condition: (context: C) => boolean;
-  execute: (actionContext: {record: Partial<T>, [key : string]: any}) => Promise<T | void>; // void in case of delete
+  execute: (actionContext: {[key : string]: any, record: Partial<T>}) => Promise<T | void>; // void in case of delete
   doAwait?: boolean;
 }
