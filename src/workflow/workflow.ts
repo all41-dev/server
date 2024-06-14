@@ -10,13 +10,14 @@ export interface Workflow<T extends IPkName<T>, C extends WorkflowContext = Work
   readonly modelType: new (plainObj?: Partial<T>) => T;
   actors: { [key: string]: Actor<T> }
   actions: { [key: string]: Action<T, C> };
+  context: C;
 }
 
 export class Workflow<T extends IPkName<T>, C extends WorkflowContext = WorkflowContext> {
-  public async run(ctx : C): Promise<(T | void)[]> {
+  public async run(): Promise<(T | void)[]> {
     const electedKeys = Object.keys(this.actions)
-      .filter((key) => this.actions[key].condition(ctx));
-    const result = await Promise.all(electedKeys.map(async (key) => this.executeAction(this.actions[key], ctx)));
+      .filter((key) => this.actions[key].condition(this.context));
+    const result = await Promise.all(electedKeys.map(async (key) => this.executeAction(this.actions[key], this.context)));
     return result;
   }
   private async executeAction(action: Action<T, C>, ctx : C): Promise<T |void> {

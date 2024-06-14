@@ -5,8 +5,9 @@ export class SampleWorkflow<C extends WorkflowContext = WorkflowContext> extends
   modelType: new (plainObj?: Partial<SampleTable> | undefined) => SampleTable;
   actors: { [key: string]: Actor<SampleTable>; };
   actions: { [key: string]: Action<SampleTable, C> };
+  context: C;
 
-  constructor() {
+  constructor(ctx: C) {
     super();
     this.modelType = SampleTable;
     this.actors = {
@@ -29,5 +30,6 @@ export class SampleWorkflow<C extends WorkflowContext = WorkflowContext> extends
         }],
       }
     }
+    this.context = ctx;
   }
 }
