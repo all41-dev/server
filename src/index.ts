@@ -9,4 +9,5 @@ export * from './ui';
 export * from './repository/repository';
 export * from './repository/repository-amqp';
 export * from './repository/repository-sequelize';
+export * from './repository/repository-messaging';
 export * from './workflow/workflow';

@@ -4,7 +4,7 @@ import { Ui } from './ui';
 import { LoggerOptions } from 'winston';
 import AMQP from 'amqplib';
 import { Repository } from './repository/repository';
-import { Workflow } from './workflow/workflow';
+import { Workflow, WorkflowContext } from './workflow/workflow';
 
 export interface IServerOptions {
   consoleLogLevel?: string;
@@ -16,7 +16,7 @@ export interface IServerOptions {
   amqp?: {[key: string]: IAmqpOptions};
   statics?: IStaticRouteOptions | IStaticRouteOptions[];
   repositories?: { [key: string]: Repository<any> };
-  workflows?: { [key: string]: Workflow<any> };
+  workflows?: { [key: string]: new(context: WorkflowContext) => Workflow<any> };
   loggerOptions?: LoggerOptions;
   skipJobScheduleAtStartup?: boolean;
   mute?: boolean;
@@ -52,8 +52,8 @@ export interface IUiOptions<T extends Ui<any>> extends IRouteOptions {
 }
 
 export interface IAmqpOptions extends IMuteable {
-  AMQP_URL: string | "amqp://localhost";
-  connection: AMQP.Connection | undefined;
+  params: AMQP.Options.Connect;
+  connection?: AMQP.Connection;
   channels: { [key: string]: AMQP.Channel };
 }
 

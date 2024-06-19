@@ -20,7 +20,7 @@ import { Api } from './api';
 import { Ui } from './ui';
 import os from 'os';
 import { Repository } from './repository/repository';
-import { Workflow } from './workflow/workflow';
+import { Workflow, WorkflowContext } from './workflow/workflow';
 
 const memoryStore = require('memorystore')(session);
 /**
@@ -47,7 +47,8 @@ export class Server {
   protected readonly _dbs: Db<any>[] = [];
   protected readonly _amqp: {[key : string] : IAmqpOptions} = {};
   protected readonly _repositories: { [key: string]: Repository<any> } = {};
-  protected readonly _workflows: { [key: string]: Workflow<any> } = {};
+  protected readonly _workflows: { [key: string]: new(context: WorkflowContext) => Workflow<any> } = {};
+  private readonly _apiArray: IApiOptions<Api<any>>[] = [];
 
   public constructor(options: IServerOptions) {
     Server.instance = this;
@@ -101,13 +102,7 @@ export class Server {
 
       // register apis
       if (options.apis) {
-        const apiArray = Array.isArray(options.apis) ? options.apis : [options.apis];
-
-        for (const api of apiArray) {
-          if (this.options.mute) api.mute = true;
-          if (!options.auth) { api.requireAuth = false; }
-          this._registerApi(api);
-        }
+        this._apiArray = Array.isArray(options.apis) ? options.apis : [options.apis];
       }
 
       // register static
@@ -149,12 +144,13 @@ export class Server {
   public static get logger(): winston.Logger { return Server._logger; }
 
   public get repositories(): { readonly [key: string]: Repository<any> } { return this._repositories; }
-  public get workflows(): { readonly [key: string]: Workflow<any> } { return this._workflows; }
+  public get workflows(): { readonly [key: string]: new(context: WorkflowContext) => Workflow<any> } { return this._workflows; }
   public get httpPort(): number | undefined { return this.options.httpPort; }
   public get app(): express.Application {
     return this._app;
   }
   public get dbs(): Db<any>[] { return this._dbs || []; }
+  public get amqp(): {[key : string] : IAmqpOptions} { return this._amqp; }
 
   public async stop(killProcess = true): Promise<void> {
     if (this.http) {
@@ -194,6 +190,11 @@ export class Server {
   public async start(): Promise<void> {
     try {
       for (const db of this._dbs) { await db.init(); }
+      for (const api of this._apiArray) { 
+        if (this.options.mute) api.mute = true;
+        if (!this.options.auth) { api.requireAuth = false; }
+        this._registerApi(api);
+      }
       await new Promise<void>((ok): void => {
       /** @description sort longest route (most slashes) as a "/" route would catch all requests */
         const sortedRoutes = this._routes.sort((a, b) => {
@@ -308,10 +309,10 @@ export class Server {
     return job.instance.running || false;
   }
 
-  public getAmqpUrl(id : string) : string {
+  public getAmqpUrl(id : string) : AMQP.Options.Connect {
     if(!this._amqp) throw new Error('amqp not initialized');
     if(!this._amqp[id]) throw new Error(`amqp '${id}' not found`);
-    return this._amqp[id].AMQP_URL;
+    return this._amqp[id].params;
   }
 
   public getAmqpChannelNames(id : string) : string[] {
@@ -325,7 +326,7 @@ export class Server {
     return new Promise(async(resolve, reject) => {
       if(!this._amqp[id]) reject(new Error(`amqp '${id}' not found`));
       try {
-        this._amqp[id].connection = await AMQP.connect(this._amqp[id].AMQP_URL);
+        this._amqp[id].connection = await AMQP.connect(this._amqp[id].params);
         resolve();
       } catch (error) {
         reject(error);

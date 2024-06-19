@@ -12,6 +12,9 @@ export interface IRouteDefinition {
   path: string;
   handlers: RequestHandler<any, any, any, ParsedQs, Record<string, any>> | Array<RequestHandler<any, any, any, ParsedQs, Record<string, any>>>
 }
+export interface IControllerInstanceType<T> extends Request {
+  _this: T;
+}
 
 export abstract class ControllerBase {
   private static _certsCache: any = {};
