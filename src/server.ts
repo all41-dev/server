@@ -21,6 +21,7 @@ import { Ui } from './ui';
 import os from 'os';
 import { Repository } from './repository/repository';
 import { Workflow, WorkflowContext } from './workflow/workflow';
+import { WebSocketServer } from 'ws';
 
 const memoryStore = require('memorystore')(session);
 /**
@@ -48,6 +49,7 @@ export class Server {
   protected readonly _amqp: {[key : string] : IAmqpOptions} = {};
   protected readonly _repositories: { [key: string]: Repository<any> } = {};
   protected readonly _workflows: { [key: string]: new(context: WorkflowContext) => Workflow<any> } = {};
+  protected readonly _websockets: { [key: string]: WebSocketServer } = {};
   private readonly _apiArray: IApiOptions<Api<any>>[] = [];
 
   public constructor(options: IServerOptions) {
@@ -99,6 +101,7 @@ export class Server {
 
       this._repositories = options.repositories || {};
       this._workflows = options.workflows || {};
+      this._websockets = options.websockets || {};
 
       // register apis
       if (options.apis) {
@@ -145,6 +148,7 @@ export class Server {
 
   public get repositories(): { readonly [key: string]: Repository<any> } { return this._repositories; }
   public get workflows(): { readonly [key: string]: new(context: WorkflowContext) => Workflow<any> } { return this._workflows; }
+  public get websockets(): { readonly [key: string] : WebSocketServer } {return this._websockets; }
   public get httpPort(): number | undefined { return this.options.httpPort; }
   public get app(): express.Application {
     return this._app;
