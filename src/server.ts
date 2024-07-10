@@ -313,6 +313,10 @@ export class Server {
     return job.instance.running || false;
   }
 
+  public registerWsServer(name: string, server: WebSocketServer): void {
+    this._websockets[name] = server;
+  }
+
   public getAmqpUrl(id : string) : AMQP.Options.Connect {
     if(!this._amqp) throw new Error('amqp not initialized');
     if(!this._amqp[id]) throw new Error(`amqp '${id}' not found`);
