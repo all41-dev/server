@@ -6,6 +6,7 @@ import AMQP from 'amqplib';
 import { Repository } from './repository/repository';
 import { Workflow, WorkflowContext } from './workflow/workflow';
 import { WebSocketServer } from 'ws';
+import { Strategy } from 'passport';
 
 export interface IServerOptions {
   consoleLogLevel?: string;
@@ -18,11 +19,12 @@ export interface IServerOptions {
   statics?: IStaticRouteOptions | IStaticRouteOptions[];
   repositories?: { [key: string]: Repository<any> };
   workflows?: { [key: string]: new(context: WorkflowContext) => Workflow<any> };
-  websockets?: { [key: string]: WebSocketServer}
+  websockets?: { [key: string]: IWsOptions };
   loggerOptions?: LoggerOptions;
   skipJobScheduleAtStartup?: boolean;
   mute?: boolean;
   httpPort?: number;
+  masterApiKey?: string;
 }
 
 export interface IRouteOptions extends IMuteable {
@@ -67,16 +69,18 @@ export interface IStaticRouteOptions extends IRouteOptions {
 }
 
 export interface IAuthOptions {
-  required: boolean;
-  issuerBaseURL: string;
-  baseURL?: string;
-  clientID: string;
-  clientSecret: string;
-  authorizationParams: {
-    response_type: string;
-    scope?: string;
-  };
-  idpLogout: boolean;
+  trustProxy?: boolean;
+  redirectAfterLogin?: string;
+  redirectAfterLogout?: string;
+  strategies: { [key: string]: Strategy };
+  privateKey?: string;
+  publicKey: string;
+}
+
+export interface IWsOptions {
+  server: WebSocketServer;
+  requireAuth?: boolean;
+  path: string;
 }
 
 export interface IMuteable {
