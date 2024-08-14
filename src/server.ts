@@ -4,26 +4,29 @@ const args = minimist(process.argv.slice(2));
 // eslint-disable-next-line no-console
 if (args.ENV_FILE_PATH) console.info(`Using config file: ${args.ENV_FILE_PATH}`);
 args.ENV_FILE_PATH ?
-  require('dotenv').config({ path: args.ENV_FILE_PATH}) :
+  require('dotenv').config({ path: args.ENV_FILE_PATH }) :
   require('dotenv').config();
 import express, { Router } from 'express';
 import * as http from 'http';
-import { IApiOptions, IJobOptions, IServerOptions, IUiOptions, IAuthOptions, IStaticRouteOptions, IAmqpOptions } from './interfaces';
+import { IApiOptions, IJobOptions, IServerOptions, IUiOptions, IAuthOptions, IStaticRouteOptions, IAmqpOptions, IWsOptions } from './interfaces';
 import { CronJob } from 'cron';
 import winston from 'winston';
 import { Db, IDbOptions } from '@all41-dev/db-tools';
-import { auth, requiresAuth } from "express-openid-connect";
-import session from "express-session";
-import bearerToken from "express-bearer-token";
-import JwtDecode from "jwt-decode";
 import { Api } from './api';
 import { Ui } from './ui';
 import os from 'os';
 import { Repository } from './repository/repository';
 import { Workflow, WorkflowContext } from './workflow/workflow';
 import { WebSocketServer } from 'ws';
+import passport from 'passport';
+import cookieParser from 'cookie-parser';
+import jwt from 'jsonwebtoken';
+import { Request, Response } from 'express';
+import { Strategy as JWTStrategy } from 'passport-jwt';
+import { IncomingMessage } from 'http';
+import Cors from 'cors';
+import querystring from 'querystring';
 
-const memoryStore = require('memorystore')(session);
 /**
  * @description hosts all microservice functionalities
  */
@@ -37,20 +40,21 @@ export class Server {
   // public sequelize!: Sequelize.Sequelize;
   protected options: IServerOptions;
   protected readonly _app: express.Application = express();
-  protected readonly _routes: {router: Router; path: string; requireAuth: boolean}[] = [];
+  protected readonly _routes: { router: Router; path: string; requireAuth: boolean }[] = [];
   protected readonly _jobs: {
     instance: CronJob;
     code: string;
     name: string;
     isScheduled?: boolean;
-    options: {execOnStart: boolean};
+    options: { execOnStart: boolean };
   }[] = [];
   protected readonly _dbs: Db<any>[] = [];
-  protected readonly _amqp: {[key : string] : IAmqpOptions} = {};
+  protected readonly _amqp: { [key: string]: IAmqpOptions } = {};
   protected readonly _repositories: { [key: string]: Repository<any> } = {};
-  protected readonly _workflows: { [key: string]: new(context: WorkflowContext) => Workflow<any> } = {};
-  protected readonly _websockets: { [key: string]: WebSocketServer } = {};
+  protected readonly _workflows: { [key: string]: new (context: WorkflowContext) => Workflow<any> } = {};
+  protected readonly _websockets: { [key: string]: IWsOptions } = {};
   private readonly _apiArray: IApiOptions<Api<any>>[] = [];
+  public readonly masterApiKey: string | undefined = process.env.MASTER_API_KEY;
 
   public constructor(options: IServerOptions) {
     Server.instance = this;
@@ -134,6 +138,10 @@ export class Server {
         this._amqp = options.amqp;
       }
 
+      if (options.masterApiKey) {
+        this.masterApiKey = options.masterApiKey;
+      }
+
     } catch (error) {
       Server.logger.log('crit', (error as Error).message, {
         error: error,
@@ -147,14 +155,14 @@ export class Server {
   public static get logger(): winston.Logger { return Server._logger; }
 
   public get repositories(): { readonly [key: string]: Repository<any> } { return this._repositories; }
-  public get workflows(): { readonly [key: string]: new(context: WorkflowContext) => Workflow<any> } { return this._workflows; }
-  public get websockets(): { readonly [key: string] : WebSocketServer } {return this._websockets; }
+  public get workflows(): { readonly [key: string]: new (context: WorkflowContext) => Workflow<any> } { return this._workflows; }
+  public get websockets(): { readonly [key: string]: IWsOptions } { return this._websockets; }
   public get httpPort(): number | undefined { return this.options.httpPort; }
   public get app(): express.Application {
     return this._app;
   }
   public get dbs(): Db<any>[] { return this._dbs || []; }
-  public get amqp(): {[key : string] : IAmqpOptions} { return this._amqp; }
+  public get amqp(): { [key: string]: IAmqpOptions } { return this._amqp; }
 
   public async stop(killProcess = true): Promise<void> {
     if (this.http) {
@@ -172,7 +180,7 @@ export class Server {
       for (const job of this._jobs) { job.instance.stop(); }
     }
     if (this._dbs) {
-      for (const db of this._dbs) { try { await db.sequelize.close(); } catch { Server.logger.info('Error closing db: continue stop'); }}
+      for (const db of this._dbs) { try { await db.sequelize.close(); } catch { Server.logger.info('Error closing db: continue stop'); } }
     }
     if (killProcess) process.exit(0);
   }
@@ -189,18 +197,21 @@ export class Server {
         ok();
       })
     });
-    for(const job of this._jobs) { job.instance.stop(); }
+    for (const job of this._jobs) { job.instance.stop(); }
   }
   public async start(): Promise<void> {
     try {
       for (const db of this._dbs) { await db.init(); }
-      for (const api of this._apiArray) { 
+      this._app.use(Cors({
+        credentials: true,
+      }))
+      for (const api of this._apiArray) {
         if (this.options.mute) api.mute = true;
         if (!this.options.auth) { api.requireAuth = false; }
         this._registerApi(api);
       }
       await new Promise<void>((ok): void => {
-      /** @description sort longest route (most slashes) as a "/" route would catch all requests */
+        /** @description sort longest route (most slashes) as a "/" route would catch all requests */
         const sortedRoutes = this._routes.sort((a, b) => {
           const aSlashs = (a.path.match(/\//g) || []).length;
           const bSlashs = (b.path.match(/\//g) || []).length;
@@ -213,8 +224,15 @@ export class Server {
         });
 
         for (const route of sortedRoutes) {
-          if (route.requireAuth) { this._app.use(route.path, requiresAuth(), route.router); }
-          else { this._app.use(route.path, route.router); }
+          if (route.requireAuth) {
+            this._app.use(route.path, async (req, res, next) => {
+              if (!req.headers['authorization'] && !req.cookies['auth'] && req.cookies['refresh']) {
+                this._refreshToken(req, res)
+              }
+              next();
+            }, this._authWithJwtOrMasterApiKey, route.router);
+          }
+          this._app.use(route.path, route.router);
         }
 
         this.http = this._app.listen(this.httpPort, (): void => {
@@ -230,6 +248,56 @@ export class Server {
       if (!this.options.skipJobScheduleAtStartup) {
         await this.scheduleJobs(this.options.mute);
       }
+
+      // Handles websocket connections w/ or w/o auth
+
+      this.http.on('upgrade', async (request, socket, head) => {
+        let wsServer: IWsOptions | undefined;
+        for (const ws of Object.keys(this.websockets)) {
+          if (request.url?.endsWith(this.websockets[ws].path)) {
+            wsServer = this.websockets[ws];
+            break;
+          }
+        }
+        if (wsServer && wsServer.requireAuth) {
+          const cookies = this._parseCookies(request);
+          let jwtToken = cookies['auth'];
+          const refreshToken = cookies['refresh'];
+          if (!jwtToken) {
+            if (!refreshToken) {
+              socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+              socket.destroy();
+              return;
+            }
+            const refreshedToken = await this._generateAccessTokenFromRefreshToken(refreshToken);
+            if (!refreshedToken) {
+              socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+              socket.destroy();
+              return;
+            }
+            jwtToken = refreshedToken.token;
+          }
+
+          jwt.verify(jwtToken, this.options.auth!.publicKey, { algorithms: ['RS256'] }, (err, decoded) => {
+            if (err) {
+              socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+              socket.destroy();
+              return;
+            }
+            const user = decoded;
+            (wsServer!.server as WebSocketServer).handleUpgrade(request, socket, head, (ws) => {
+              (wsServer!.server as WebSocketServer).emit('connection', ws, request, user);
+            });
+          });
+        } else if (wsServer) {
+          (wsServer!.server as WebSocketServer).handleUpgrade(request, socket, head, (ws) => {
+            (wsServer!.server as WebSocketServer).emit('connection', ws, request);
+          });
+        } else {
+          socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
+          socket.destroy();
+        }
+      });
 
       if (!this.options.mute) {
         Server.logger.info(`Server started on ${os.hostname}`);
@@ -248,7 +316,7 @@ export class Server {
   }
 
   public scheduleJobs(mute = false): void {
-    for(const job of this._jobs) {
+    for (const job of this._jobs) {
       job.instance.start();
       job.isScheduled = true;
       if (!mute) {
@@ -264,7 +332,7 @@ export class Server {
   }
 
   public unscheduleJobs(): void {
-    for(const job of this._jobs) {
+    for (const job of this._jobs) {
       job.instance.stop();
       job.isScheduled = false;
       Server.logger.info(`job ${job.name} unscheduled`);
@@ -313,26 +381,29 @@ export class Server {
     return job.instance.running || false;
   }
 
-  public registerWsServer(name: string, server: WebSocketServer): void {
-    this._websockets[name] = server;
+  public registerWsServer(name: string, server: WebSocketServer, path: string, useAuth: boolean = false): void {
+    this._websockets[name] = { server: server, requireAuth: useAuth, path };
+    this.websockets[name].server.on('connection', (ws: WebSocket & { user: any }, request: IncomingMessage, user: any) => {
+      ws.user = user;
+    });
   }
 
-  public getAmqpUrl(id : string) : AMQP.Options.Connect {
-    if(!this._amqp) throw new Error('amqp not initialized');
-    if(!this._amqp[id]) throw new Error(`amqp '${id}' not found`);
+  public getAmqpUrl(id: string): AMQP.Options.Connect {
+    if (!this._amqp) throw new Error('amqp not initialized');
+    if (!this._amqp[id]) throw new Error(`amqp '${id}' not found`);
     return this._amqp[id].params;
   }
 
-  public getAmqpChannelNames(id : string) : string[] {
-    if(!this._amqp) throw new Error('amqp not initialized');
-    if(!this._amqp[id]) throw new Error(`amqp '${id}' not found`);
+  public getAmqpChannelNames(id: string): string[] {
+    if (!this._amqp) throw new Error('amqp not initialized');
+    if (!this._amqp[id]) throw new Error(`amqp '${id}' not found`);
     return Object.keys(this._amqp[id].channels);
   }
 
 
-  public amqpConnect(id : string) : Promise<void> {
-    return new Promise(async(resolve, reject) => {
-      if(!this._amqp[id]) reject(new Error(`amqp '${id}' not found`));
+  public amqpConnect(id: string): Promise<void> {
+    return new Promise(async (resolve, reject) => {
+      if (!this._amqp[id]) reject(new Error(`amqp '${id}' not found`));
       try {
         this._amqp[id].connection = await AMQP.connect(this._amqp[id].params);
         resolve();
@@ -342,8 +413,8 @@ export class Server {
     });
   }
 
-  async amqpDisconnect(id : string) : Promise<void> {
-    return new Promise(async(resolve, reject) => {
+  async amqpDisconnect(id: string): Promise<void> {
+    return new Promise(async (resolve, reject) => {
       if (!this._amqp[id]) {
         reject(Error(`amqp '${id}' not found`));
       }
@@ -358,8 +429,8 @@ export class Server {
     });
   }
 
-  async amqpCreateChannel(id : string, name: string) : Promise<void> {
-    return new Promise(async(resolve, reject) => {
+  async amqpCreateChannel(id: string, name: string): Promise<void> {
+    return new Promise(async (resolve, reject) => {
       if (!this._amqp[id]) {
         reject(new Error(`amqp '${id}' not found`));
       }
@@ -384,9 +455,9 @@ export class Server {
     });
   }
 
-  async amqpDeleteChannel(id : string, name: string) : Promise<void> {
+  async amqpDeleteChannel(id: string, name: string): Promise<void> {
     return new Promise(async (resolve, reject) => {
-      if(!this._amqp[id]) reject(new Error(`amqp '${id}' not found`));
+      if (!this._amqp[id]) reject(new Error(`amqp '${id}' not found`));
       if (!this._amqp[id].connection) {
         reject(new Error("No connection"));
       }
@@ -405,7 +476,7 @@ export class Server {
     });
   }
 
-  async amqpCreateExchange(id : string, channel: string, name: string, type: string) : Promise<void> {
+  async amqpCreateExchange(id: string, channel: string, name: string, type: string): Promise<void> {
     return new Promise(async (resolve, reject) => {
       if (!this._amqp[id].connection) {
         reject(new Error("No connection"));
@@ -428,7 +499,7 @@ export class Server {
     });
   }
 
-  async amqpDeleteExchange(id : string, name: string) : Promise<void> {
+  async amqpDeleteExchange(id: string, name: string): Promise<void> {
     return new Promise(async (resolve, reject) => {
       if (!this._amqp[id].connection) {
         reject(new Error("No connection"));
@@ -447,7 +518,7 @@ export class Server {
     });
   }
 
-  async amqpCreateQueue(id : string, channel: string, name: string, exchange: string, pattern?: string) : Promise<void> {
+  async amqpCreateQueue(id: string, channel: string, name: string, exchange: string, pattern?: string): Promise<void> {
     return new Promise(async (resolve, reject) => {
       if (!this._amqp[id].channels[channel]) {
         reject(new Error(`amqp channel '${channel}' not found`));
@@ -470,9 +541,9 @@ export class Server {
     });
   }
 
-  async amqpDeleteQueue(id : string, channel: string, name: string) : Promise<void> {
+  async amqpDeleteQueue(id: string, channel: string, name: string): Promise<void> {
     return new Promise(async (resolve, reject) => {
-      if(!this._amqp[id]) reject(new Error(`amqp '${id}' not found`));
+      if (!this._amqp[id]) reject(new Error(`amqp '${id}' not found`));
       if (!this._amqp[id].channels[channel]) {
         reject(new Error(`amqp channel '${channel}' not found`));
       }
@@ -485,7 +556,7 @@ export class Server {
     });
   }
 
-  async amqpSend(id : string, channel: string, exchange : string, routingKey: string, message: string) : Promise<void> {
+  async amqpSend(id: string, channel: string, exchange: string, routingKey: string, message: string): Promise<void> {
     return new Promise(async (resolve, reject) => {
       if (!this._amqp[id].channels[channel]) {
         reject(new Error(`amqp channel '${channel}' not found`));
@@ -499,7 +570,7 @@ export class Server {
     });
   }
 
-  async amqpReceive(id : string, channel: string, queue: string, onMessage : any, maxNumber? : number) : Promise<string> {
+  async amqpReceive(id: string, channel: string, queue: string, onMessage: any, maxNumber?: number): Promise<string> {
     return new Promise(async (resolve, reject) => {
       if (!this._amqp[id].channels[channel]) {
         reject(new Error(`amqp channel '${channel}' not found`));
@@ -515,7 +586,7 @@ export class Server {
     });
   }
 
-  async amqpGetChannel(id : string, channel: string) : Promise<any> {
+  async amqpGetChannel(id: string, channel: string): Promise<any> {
     return new Promise(async (resolve, reject) => {
       if (!this._amqp[id].channels[channel]) {
         reject(new Error(`amqp channel '${channel}' not found`));
@@ -545,16 +616,32 @@ export class Server {
 
   protected _registerUi(uiOpt: IUiOptions<Ui<any>>): void {
     const uiInst = new uiOpt.type(uiOpt).init();
-    this._routes.push({router: uiInst, path: uiOpt.baseRoute, requireAuth: uiOpt.requireAuth || false})
+    this._routes.push({ router: uiInst, path: uiOpt.baseRoute, requireAuth: uiOpt.requireAuth || false })
     // if (ui.requireAuth) { this._app.use(ui.baseRoute, requiresAuth(), uiInst); }
     // else { this._app.use(ui.baseRoute, uiInst); }
   }
 
   protected _registerApi(apiOpt: IApiOptions<Api<any>>): void {
     const api = new apiOpt.type(apiOpt).init();
-    this._routes.push({router: api, path: apiOpt.baseRoute, requireAuth: apiOpt.requireAuth || false})
+    this._routes.push({ router: api, path: apiOpt.baseRoute, requireAuth: apiOpt.requireAuth || false })
     // if (apiOpt.requireAuth) { this._app.use(apiOpt.baseRoute, requiresAuth(), api); }
     // else { this._app.use(apiOpt.baseRoute, api); }
+  }
+
+  protected _parseCookies(request: IncomingMessage) {
+    const list: { [key: string]: string } = {};
+    const rc = request.headers.cookie;
+
+    rc && rc.split(';').forEach(function (cookie) {
+      let [name, ...other] = cookie.split('=');
+      name = name.trim();
+      if (!name) return;
+      const value = other.join('=');
+      if (!value) return;
+      list[name] = decodeURIComponent(value);
+    });
+
+    return list;
   }
 
   protected _registerDb(dbOpt: IDbOptions<Db<any>>): void {
@@ -562,13 +649,14 @@ export class Server {
     this._dbs.push(new dbOpt.type(dbOpt));
   }
   protected _registerJob(jobOpt: IJobOptions): void {
-    this._jobs.push({instance: new CronJob({
-      cronTime: jobOpt.schedule,
-      onTick: jobOpt.function,
-      runOnInit: false,
-      start: false,
-      context: jobOpt.context,
-    }), code: jobOpt.code || jobOpt.name, name: jobOpt.name, isScheduled: false, options: { execOnStart: jobOpt.executeOnStart }
+    this._jobs.push({
+      instance: new CronJob({
+        cronTime: jobOpt.schedule,
+        onTick: jobOpt.function,
+        runOnInit: false,
+        start: false,
+        context: jobOpt.context,
+      }), code: jobOpt.code || jobOpt.name, name: jobOpt.name, isScheduled: false, options: { execOnStart: jobOpt.executeOnStart }
     });
     if (!jobOpt.mute) {
       Server.logger.info({
@@ -578,40 +666,175 @@ export class Server {
     }
   }
 
-  protected _registerAuth(authOptions: IAuthOptions): void {
-    this._app.use(
-      session({
-        secret: "should this be set?",
-        resave: true,
-        saveUninitialized: false,
-        store: new memoryStore({checkPeriod: 86400000}),
-      }),
-      bearerToken(),
-      (req: any, _res: any, next: any) => {
-        if ( req.token) {
-          req.session.openidTokens = JwtDecode(req.token);
-          req.session.openidTokens.id_token = req.token;
+  private _generateJWT(redirectUri?: string): (req: Request, res: Response) => Promise<any> {
+    return async (req: Request, res: Response) => {
+      const accessToken = jwt.sign({ user: req.user }, this.options.auth!.privateKey!, { algorithm: 'RS256', expiresIn: '1m', issuer: process.env.AUTH_ISSUER!, audience: process.env.AUTH_AUDIENCE!, subject: (req.user! as any).uuid });
+      const refreshToken = await this._saveRefreshToken((req.user! as { uuid: string }).uuid);
+      let redirectAfter = redirectUri || '/';
+      if (req.cookies['redirect']) {
+        redirectAfter = req.cookies['redirect'];
+        res.clearCookie('redirect');
+        res.clearCookie('failureRedirect');
+        redirectAfter += '?' + querystring.stringify({ accessToken, refreshToken });
+      } else {
+        res.cookie('auth', accessToken, { maxAge: 5 * 60 * 1000 });
+        res.cookie('refresh', refreshToken, { maxAge: 24 * 60 * 60 * 1000 });
+      }
+      res.redirect(redirectAfter || '/');
+    };
+  }
+
+  private _cookieExtractor(req: Request): string | null {
+    let token = null;
+    if (req && req.cookies) {
+      token = req.cookies['auth'];
+    }
+    return token;
+  }
+
+  protected async _registerAuth(authOptions: IAuthOptions): Promise<void> {
+    this._app.set('trust proxy', authOptions.trustProxy); // trust first proxy
+    this._app.use(cookieParser());
+
+    const router = Router();
+
+    router.use(express.json());
+
+    router.use(Cors({
+      credentials: true,
+    }));
+
+    passport.use('jwtAuth', new JWTStrategy({
+      jwtFromRequest: this._cookieExtractor,
+      secretOrKey: authOptions.publicKey,
+      issuer: process.env.AUTH_ISSUER!,
+      audience: process.env.AUTH_AUDIENCE!,
+      algorithms: ['RS256'],
+    },
+      (jwtPayload, done) => {
+        return done(null, jwtPayload);
+      }
+    ));
+
+    for (const [name, strategy] of Object.entries(authOptions.strategies)) {
+      passport.use(name, strategy);
+      router.get('/' + name, (req, res, next) => {
+        const redirectUri = req.query.redirectUrl;
+        const failureRedirect = req.query.failureRedirect;
+        if (redirectUri) {
+          res.cookie('redirect', redirectUri, { maxAge: 5 * 60 * 1000 });
+        }
+        if (failureRedirect) {
+          res.cookie('failureRedirect', failureRedirect, { maxAge: 5 * 60 * 1000 });
         }
         next();
       },
-      auth(authOptions),
-    );
-    // return current token
-    this._app.get("/token", requiresAuth(), async (req: any, res: any, next: any) => {
-      let tokenSet = req.openid.tokens;
-      if (tokenSet.expired() && tokenSet.refresh_token) {
-        try {
-          tokenSet = await req.openid.client.refresh(tokenSet);
-        } catch (err) {
-          next(err);
-        }
-        tokenSet.refresh_token = req.openid.tokens.refresh_token;
-        req.openid.tokens = tokenSet;
-      }
-      res.json(tokenSet);
+        passport.authenticate(name, { session: false })
+      );
+
+      router.get('/' + name + '/callback',
+        (req, res, next) => {
+            const failureRedirect = req.cookies['failureRedirect'] || this.options.auth?.redirectAfterLogout || '/';
+            passport.authenticate(name, { session: false },
+            (err: any, user: any, info: any) => {
+              if (err) {
+                return res.status(401).json({ message: err.message });
+              }
+              if (!user) {
+                const query = querystring.stringify({ error: info.message });
+                res.clearCookie('failureRedirect');
+                res.clearCookie('redirect');
+                return res.redirect(failureRedirect + (query ? '?' + query : ''));
+              }
+              req.user = user;
+              next();
+            }
+          )(req, res, next)
+        }, this._generateJWT(this.options.auth?.redirectAfterLogin)
+      );
+    }
+
+    router.get('/logout', (req, res) => {
+      // clear refresh token
+      this._revokeRefreshToken(req.cookies.refresh);
+      res.clearCookie('auth');
+      res.clearCookie('refresh');
+      res.redirect(this.options.auth?.redirectAfterLogout || '/');
     });
-    this._app.get('/user', requiresAuth(), (req: any, res: any) => res.json(req.openid.user));
-    this._app.get('/logout', requiresAuth(), (_req: any, res: any) => res.openid.logout());
-    this._app.get('/login',requiresAuth(), (_req: any, res: any) => res.openid.login());
+
+    router.get('/profile', this._authWithJwtOrMasterApiKey, (req, res) => {
+      res.json({
+        username: (req.user as any).user.username,
+        email: (req.user as any).user.email,
+        firstName: (req.user as any).user.firstName,
+        lastName: (req.user as any).user.lastName,
+      });
+    });
+
+    router.post('/refresh', this._refreshToken);
+
+    this._app.use('/auth', router);
+  }
+
+  protected readonly _authWithJwtOrMasterApiKey = (req: Request, res: Response, next: any) => {
+    if (req.headers.authorization) {
+      const authorization = req.headers.authorization.split(' ');
+      if (authorization.length === 2 && authorization[0] === 'Bearer') {
+        const token = authorization[1];
+        if (token && token === this.options.masterApiKey) {
+          next();
+          return;
+        }
+      }
+      return res.status(401)
+    }
+    passport.authenticate('jwtAuth', { session: false }, async (error : any, token : any) => {
+        if (error || !token) {
+          // try to refresh token
+          token = await this._refreshToken(req, res);
+        }
+        req.user = { user: token.user };
+        next();
+    })(req, res, next);
+  }
+
+  protected async _saveRefreshToken(userId: string): Promise<string> {
+    // Should be implemented when using this framework
+    return jwt.sign({ id: userId }, this.options.auth!.privateKey!, { algorithm: 'RS256', expiresIn: '1d', issuer: process.env.AUTH_ISSUER!, audience: process.env.AUTH_AUDIENCE!, subject: userId });
+  }
+
+  protected _refreshToken = async (req: Request, res: Response): Promise<any> => {
+    let refreshToken = req.cookies.refresh;
+    let refreshTokenCookie = true;
+    if (!refreshToken) {
+      if (!req.body || !req.body.refreshToken) {
+        res.status(401).send("No refresh token provided");
+        return;
+      }
+      refreshToken = req.body.refreshToken;
+      refreshTokenCookie = false;
+    }
+
+    const token = await this._generateAccessTokenFromRefreshToken(refreshToken);
+    if (!token) {
+      res.status(401).send("Refresh token not valid");
+      return;
+    }
+
+    if (refreshTokenCookie) {
+      res.cookie('auth', token.token, { maxAge: 5 * 60 * 1000 });
+    } else {
+      res.json(token);
+    }
+    return token;
+  }
+
+  protected async _generateAccessTokenFromRefreshToken(refreshToken: string): Promise<{ user: any, token: string } | undefined> {
+    // Should be implemented when using this framework
+    return { user: {}, token: '' };
+  }
+
+  protected async _revokeRefreshToken(refreshToken: string): Promise<void> {
+    // Should be implemented when using this framework
   }
 }
