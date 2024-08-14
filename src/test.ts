@@ -30,7 +30,7 @@ const server = new Server({
     plain: new SampleRepository2,
   },
   workflows: {
-    sample: new SampleWorkflow,
+    sample: SampleWorkflow,
   },
   loggerOptions: {
     level: 'debug',
@@ -48,8 +48,8 @@ server.start().then(async () => {
   Server.logger.debug('server started');
   // const repo = server.repositories.sequelizeBase as RepositorySequelize<SampleTable>;
   // const res = await repo.getByKey('7fdac63b-bffc-440d-9ae2-813f123ba113');
-  const wf = server.workflows.sample as Workflow<SampleTable>;
-  const res = await wf.run({source: 'api', data: { record: { exchangeCode: 'bar' }}});
+  const wf = new server.workflows.sample({source: 'api', actionContext: { record: { exchangeCode: 'bar' }}}) as Workflow<SampleTable>;
+  const res = await wf.run();
   // console.log(res);
   
   // server.stop().then(() => {

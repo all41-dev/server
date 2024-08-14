@@ -4,7 +4,8 @@ import { Ui } from './ui';
 import { LoggerOptions } from 'winston';
 import AMQP from 'amqplib';
 import { Repository } from './repository/repository';
-import { Workflow } from './workflow/workflow';
+import { Workflow, WorkflowContext } from './workflow/workflow';
+import { WebSocketServer } from 'ws';
 
 export interface IServerOptions {
   consoleLogLevel?: string;
@@ -16,7 +17,8 @@ export interface IServerOptions {
   amqp?: {[key: string]: IAmqpOptions};
   statics?: IStaticRouteOptions | IStaticRouteOptions[];
   repositories?: { [key: string]: Repository<any> };
-  workflows?: { [key: string]: Workflow<any> };
+  workflows?: { [key: string]: new(context: WorkflowContext) => Workflow<any> };
+  websockets?: { [key: string]: WebSocketServer}
   loggerOptions?: LoggerOptions;
   skipJobScheduleAtStartup?: boolean;
   mute?: boolean;

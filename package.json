@@ -1,6 +1,6 @@
 {
   "name": "@all41-dev/server",
-  "version": "4.0.0-alpha.22",
+  "version": "4.0.0-alpha.27",
   "description": "",
   "main": "./dist/index.js",
   "types": "dist/index.d.ts",
@@ -52,6 +52,7 @@
     "reflect-metadata": "^0.1.13",
     "semver": "^7.5.4",
     "winston": "^3.8.2",
+    "ws": "^8.17.1",
     "xmlhttprequest": "^1.8.0"
   },
   "devDependencies": {
@@ -70,6 +71,7 @@
     "@types/node-schedule": "^2.1.0",
     "@types/request-promise": "^4.1.48",
     "@types/validator": "^13.7.14",
+    "@types/ws": "^8.5.10",
     "@typescript-eslint/eslint-plugin": "^5.56.0",
     "@typescript-eslint/parser": "^5.56.0",
     "chai": "^4.3.7",

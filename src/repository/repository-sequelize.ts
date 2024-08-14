@@ -40,7 +40,7 @@ export class RepositorySequelize<T extends Model<T> & IPkName<T>> implements Rep
 
     const localOptions = {[this._sequelizeRepository.primaryKeyAttribute]: key};
     Object.assign(localOptions, options);
-    const result = await this._sequelizeRepository.findByPk(key);
+    const result = await this._sequelizeRepository.findByPk(key, options);
     if (result === null) throw new Error(`No record found with key '${key} on repository '${this.modelType.constructor.name}`);
     Utils.inst.dateToDateTime(result);
     return result;
