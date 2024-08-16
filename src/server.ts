@@ -36,6 +36,7 @@ export class Server {
   private static amqpTypes = ["fanout", "direct", "topic", "headers"];
 
   public http!: http.Server;
+  public readonly masterApiKey: string | undefined = process.env.MASTER_API_KEY;
 
   // public sequelize!: Sequelize.Sequelize;
   protected options: IServerOptions;
@@ -54,7 +55,6 @@ export class Server {
   protected readonly _workflows: { [key: string]: new (context: WorkflowContext) => Workflow<any> } = {};
   protected readonly _websockets: { [key: string]: IWsOptions } = {};
   private readonly _apiArray: IApiOptions<Api<any>>[] = [];
-  public readonly masterApiKey: string | undefined = process.env.MASTER_API_KEY;
 
   public constructor(options: IServerOptions) {
     Server.instance = this;
@@ -278,20 +278,33 @@ export class Server {
             jwtToken = refreshedToken.token;
           }
 
-          jwt.verify(jwtToken, this.options.auth!.publicKey, { algorithms: ['RS256'] }, (err, decoded) => {
+          if (!this.options.auth) {
+            socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
+            socket.destroy();
+            return;
+          }
+
+          jwt.verify(jwtToken, this.options.auth.publicKey, { algorithms: ['RS256'] }, (err, decoded) => {
             if (err) {
               socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
               socket.destroy();
               return;
             }
+
+            if (!wsServer) { // should not happen, but eslint is happy
+              socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
+              socket.destroy();
+              return;
+            }
+
             const user = decoded;
-            (wsServer!.server as WebSocketServer).handleUpgrade(request, socket, head, (ws) => {
-              (wsServer!.server as WebSocketServer).emit('connection', ws, request, user);
+            (wsServer.server as WebSocketServer).handleUpgrade(request, socket, head, (ws) => {
+              (wsServer.server as WebSocketServer).emit('connection', ws, request, user);
             });
           });
         } else if (wsServer) {
-          (wsServer!.server as WebSocketServer).handleUpgrade(request, socket, head, (ws) => {
-            (wsServer!.server as WebSocketServer).emit('connection', ws, request);
+          (wsServer.server as WebSocketServer).handleUpgrade(request, socket, head, (ws) => {
+            (wsServer.server as WebSocketServer).emit('connection', ws, request);
           });
         } else {
           socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
@@ -381,7 +394,7 @@ export class Server {
     return job.instance.running || false;
   }
 
-  public registerWsServer(name: string, server: WebSocketServer, path: string, useAuth: boolean = false): void {
+  public registerWsServer(name: string, server: WebSocketServer, path: string, useAuth = false): void {
     this._websockets[name] = { server: server, requireAuth: useAuth, path };
     this.websockets[name].server.on('connection', (ws: WebSocket & { user: any }, request: IncomingMessage, user: any) => {
       ws.user = user;
@@ -633,12 +646,12 @@ export class Server {
     const rc = request.headers.cookie;
 
     rc && rc.split(';').forEach(function (cookie) {
-      let [name, ...other] = cookie.split('=');
-      name = name.trim();
-      if (!name) return;
+      const [name, ...other] = cookie.split('=');
+      const trimmedName = name.trim();
+      if (!trimmedName) return;
       const value = other.join('=');
       if (!value) return;
-      list[name] = decodeURIComponent(value);
+      list[trimmedName] = decodeURIComponent(value);
     });
 
     return list;
@@ -666,28 +679,37 @@ export class Server {
     }
   }
 
-  private _generateJWT(redirectUri?: string): (req: Request, res: Response) => Promise<any> {
-    return async (req: Request, res: Response) => {
-      const accessToken = jwt.sign({ user: req.user }, this.options.auth!.privateKey!, { algorithm: 'RS256', expiresIn: '1m', issuer: process.env.AUTH_ISSUER!, audience: process.env.AUTH_AUDIENCE!, subject: (req.user! as any).uuid });
-      const refreshToken = await this._saveRefreshToken((req.user! as { uuid: string }).uuid);
-      let redirectAfter = redirectUri || '/';
-      if (req.cookies['redirect']) {
-        redirectAfter = req.cookies['redirect'];
-        res.clearCookie('redirect');
-        res.clearCookie('failureRedirect');
-        redirectAfter += '?' + querystring.stringify({ accessToken, refreshToken });
-      } else {
-        res.cookie('auth', accessToken, { maxAge: 5 * 60 * 1000 });
-        res.cookie('refresh', refreshToken, { maxAge: 24 * 60 * 60 * 1000 });
-      }
-      res.redirect(redirectAfter || '/');
-    };
+  protected async _generateAccessTokenFromRefreshToken(refreshToken: string): Promise<{ user: any, token: string } | undefined> {
+    // Should be implemented when using this framework
+    return { user: {}, token: '' };
   }
 
-  private _cookieExtractor(req: Request): string | null {
-    let token = null;
-    if (req && req.cookies) {
-      token = req.cookies['auth'];
+  protected async _revokeRefreshToken(refreshToken: string): Promise<void> {
+    // Should be implemented when using this framework
+  }
+
+  protected _refreshToken = async (req: Request, res: Response): Promise<any> => {
+    let refreshToken = req.cookies.refresh;
+    let refreshTokenCookie = true;
+    if (!refreshToken) {
+      if (!req.body || !req.body.refreshToken) {
+        res.status(401).send("No refresh token provided");
+        return;
+      }
+      refreshToken = req.body.refreshToken;
+      refreshTokenCookie = false;
+    }
+
+    const token = await this._generateAccessTokenFromRefreshToken(refreshToken);
+    if (!token) {
+      res.status(401).send("Refresh token not valid");
+      return;
+    }
+
+    if (refreshTokenCookie) {
+      res.cookie('auth', token.token, { maxAge: 5 * 60 * 1000 });
+    } else {
+      res.json(token);
     }
     return token;
   }
@@ -707,13 +729,13 @@ export class Server {
     passport.use('jwtAuth', new JWTStrategy({
       jwtFromRequest: this._cookieExtractor,
       secretOrKey: authOptions.publicKey,
-      issuer: process.env.AUTH_ISSUER!,
-      audience: process.env.AUTH_AUDIENCE!,
+      issuer: process.env.AUTH_ISSUER || 'all41',
+      audience: process.env.AUTH_AUDIENCE || 'all41',
       algorithms: ['RS256'],
     },
-      (jwtPayload, done) => {
-        return done(null, jwtPayload);
-      }
+    (jwtPayload, done) => {
+      return done(null, jwtPayload);
+    }
     ));
 
     for (const [name, strategy] of Object.entries(authOptions.strategies)) {
@@ -729,13 +751,13 @@ export class Server {
         }
         next();
       },
-        passport.authenticate(name, { session: false })
+      passport.authenticate(name, { session: false })
       );
 
       router.get('/' + name + '/callback',
         (req, res, next) => {
-            const failureRedirect = req.cookies['failureRedirect'] || this.options.auth?.redirectAfterLogout || '/';
-            passport.authenticate(name, { session: false },
+          const failureRedirect = req.cookies['failureRedirect'] || this.options.auth?.redirectAfterLogout || '/';
+          passport.authenticate(name, { session: false },
             (err: any, user: any, info: any) => {
               if (err) {
                 return res.status(401).json({ message: err.message });
@@ -789,52 +811,49 @@ export class Server {
       return res.status(401)
     }
     passport.authenticate('jwtAuth', { session: false }, async (error : any, token : any) => {
-        if (error || !token) {
-          // try to refresh token
-          token = await this._refreshToken(req, res);
-        }
-        req.user = { user: token.user };
-        next();
+      if (error || !token) {
+        // try to refresh token
+        token = await this._refreshToken(req, res);
+      }
+      req.user = { user: token.user };
+      next();
     })(req, res, next);
   }
 
   protected async _saveRefreshToken(userId: string): Promise<string> {
     // Should be implemented when using this framework
-    return jwt.sign({ id: userId }, this.options.auth!.privateKey!, { algorithm: 'RS256', expiresIn: '1d', issuer: process.env.AUTH_ISSUER!, audience: process.env.AUTH_AUDIENCE!, subject: userId });
+    return "";
   }
 
-  protected _refreshToken = async (req: Request, res: Response): Promise<any> => {
-    let refreshToken = req.cookies.refresh;
-    let refreshTokenCookie = true;
-    if (!refreshToken) {
-      if (!req.body || !req.body.refreshToken) {
-        res.status(401).send("No refresh token provided");
-        return;
+  private _generateJWT(redirectUri?: string): (req: Request, res: Response) => Promise<any> {
+    return async (req: Request, res: Response) => {
+      if (!this.options.auth || !this.options.auth.privateKey) {
+        throw new Error('No private key provided for JWT generation');
       }
-      refreshToken = req.body.refreshToken;
-      refreshTokenCookie = false;
-    }
+      if (!req.user) {
+        throw new Error('No user found in request');
+      }
+      const accessToken = jwt.sign({ user: req.user }, this.options.auth.privateKey, { algorithm: 'RS256', expiresIn: '1m', issuer: process.env.AUTH_ISSUER || 'all41', audience: process.env.AUTH_AUDIENCE || 'all41', subject: (req.user as any).uuid });
+      const refreshToken = await this._saveRefreshToken((req.user as { uuid: string }).uuid);
+      let redirectAfter = redirectUri || '/';
+      if (req.cookies['redirect']) {
+        redirectAfter = req.cookies['redirect'];
+        res.clearCookie('redirect');
+        res.clearCookie('failureRedirect');
+        redirectAfter += '?' + querystring.stringify({ accessToken, refreshToken });
+      } else {
+        res.cookie('auth', accessToken, { maxAge: 5 * 60 * 1000 });
+        res.cookie('refresh', refreshToken, { maxAge: 24 * 60 * 60 * 1000 });
+      }
+      res.redirect(redirectAfter || '/');
+    };
+  }
 
-    const token = await this._generateAccessTokenFromRefreshToken(refreshToken);
-    if (!token) {
-      res.status(401).send("Refresh token not valid");
-      return;
-    }
-
-    if (refreshTokenCookie) {
-      res.cookie('auth', token.token, { maxAge: 5 * 60 * 1000 });
-    } else {
-      res.json(token);
+  private _cookieExtractor(req: Request): string | null {
+    let token = null;
+    if (req && req.cookies) {
+      token = req.cookies['auth'];
     }
     return token;
-  }
-
-  protected async _generateAccessTokenFromRefreshToken(refreshToken: string): Promise<{ user: any, token: string } | undefined> {
-    // Should be implemented when using this framework
-    return { user: {}, token: '' };
-  }
-
-  protected async _revokeRefreshToken(refreshToken: string): Promise<void> {
-    // Should be implemented when using this framework
   }
 }

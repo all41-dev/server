@@ -1,8 +1,6 @@
 import express from 'express';
 import * as path from 'path';
 import { IUiOptions } from './interfaces';
-import { requiresAuth } from "express-openid-connect";
-import { ControllerBase } from './controller/controller-base';
 
 // tslint:disable-next-line:no-var-requires
 const hist = require('connect-history-api-fallback');
