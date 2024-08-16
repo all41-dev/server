@@ -299,11 +299,21 @@ export class Server {
 
             const user = decoded;
             (wsServer.server as WebSocketServer).handleUpgrade(request, socket, head, (ws) => {
+              if (!wsServer) {
+                socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
+                socket.destroy();
+                return;
+              }
               (wsServer.server as WebSocketServer).emit('connection', ws, request, user);
             });
           });
         } else if (wsServer) {
           (wsServer.server as WebSocketServer).handleUpgrade(request, socket, head, (ws) => {
+            if (!wsServer) {
+              socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
+              socket.destroy();
+              return;
+            }
             (wsServer.server as WebSocketServer).emit('connection', ws, request);
           });
         } else {
