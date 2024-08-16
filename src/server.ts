@@ -823,6 +823,9 @@ export class Server {
     passport.authenticate('jwtAuth', { session: false }, async (error : any, token : any) => {
       if (error || !token) {
         // try to refresh token
+        if (!req.cookies['auth'] && !req.cookies['refresh']) {
+          return res.status(401).send("Unauthorized");
+        }
         token = await this._refreshToken(req, res);
       }
       req.user = { user: token.user };
