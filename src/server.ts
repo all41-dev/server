@@ -813,12 +813,12 @@ export class Server {
       const authorization = req.headers.authorization.split(' ');
       if (authorization.length === 2 && authorization[0] === 'Bearer') {
         const token = authorization[1];
-        if (token && token === this.options.masterApiKey) {
+        if (token && token === this.masterApiKey) {
           next();
           return;
         }
       }
-      return res.status(401)
+      return res.sendStatus(401)
     }
     passport.authenticate('jwtAuth', { session: false }, async (error : any, token : any) => {
       if (error || !token) {
