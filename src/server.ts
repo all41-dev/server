@@ -828,6 +828,7 @@ export class Server {
         }
         token = await this._refreshToken(req, res);
       }
+      if(!token) return res.status(401).send("Unauthorized");
       req.user = { user: token.user };
       next();
     })(req, res, next);
