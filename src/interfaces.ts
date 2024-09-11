@@ -7,6 +7,7 @@ import { Repository } from './repository/repository';
 import { Workflow, WorkflowContext } from './workflow/workflow';
 import { WebSocketServer } from 'ws';
 import { Strategy } from 'passport';
+import { IAuthOptions } from '@all41-dev/iam.api';
 
 export interface IServerOptions {
   consoleLogLevel?: string;
@@ -66,15 +67,6 @@ export interface IStaticRouteOptions extends IRouteOptions {
   config?: any;
   requireAuth?: boolean;
   getRoutes?: { path: string, handler: (req: any, res: any) => void }[]
-}
-
-export interface IAuthOptions {
-  trustProxy?: boolean;
-  redirectAfterLogin?: string;
-  redirectAfterLogout?: string;
-  strategies: { [key: string]: Strategy };
-  privateKey?: string;
-  publicKey: string;
 }
 
 export interface IWsOptions {

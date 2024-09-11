@@ -8,7 +8,7 @@ args.ENV_FILE_PATH ?
   require('dotenv').config();
 import express, { Router } from 'express';
 import * as http from 'http';
-import { IApiOptions, IJobOptions, IServerOptions, IUiOptions, IAuthOptions, IStaticRouteOptions, IAmqpOptions, IWsOptions } from './interfaces';
+import { IApiOptions, IJobOptions, IServerOptions, IUiOptions, IStaticRouteOptions, IAmqpOptions, IWsOptions } from './interfaces';
 import { CronJob } from 'cron';
 import winston from 'winston';
 import { Db, IDbOptions } from '@all41-dev/db-tools';
@@ -26,6 +26,7 @@ import { Strategy as JWTStrategy } from 'passport-jwt';
 import { IncomingMessage } from 'http';
 import Cors from 'cors';
 import querystring from 'querystring';
+import { AuthManager, IAuthOptions } from '@all41-dev/iam.api';
 
 /**
  * @description hosts all microservice functionalities
@@ -40,6 +41,7 @@ export class Server {
 
   // public sequelize!: Sequelize.Sequelize;
   protected options: IServerOptions;
+  protected _auth: AuthManager | undefined = undefined;
   protected readonly _app: express.Application = express();
   protected readonly _routes: { router: Router; path: string; requireAuth: boolean }[] = [];
   protected readonly _jobs: {
@@ -205,6 +207,7 @@ export class Server {
       this._app.use(Cors({
         credentials: true,
       }))
+      this._app.use(cookieParser());
       for (const api of this._apiArray) {
         if (this.options.mute) api.mute = true;
         if (!this.options.auth) { api.requireAuth = false; }
@@ -224,13 +227,13 @@ export class Server {
         });
 
         for (const route of sortedRoutes) {
-          if (route.requireAuth) {
+          if (route.requireAuth && this._auth) {
             this._app.use(route.path, async (req, res, next) => {
               if (!req.headers['authorization'] && !req.cookies['auth'] && req.cookies['refresh']) {
-                this._refreshToken(req, res)
+                this._auth?.refreshToken(req, res)
               }
               next();
-            }, this._authWithJwtOrMasterApiKey, route.router);
+            }, this._auth.authMiddleware, route.router);
           }
           this._app.use(route.path, route.router);
         }
@@ -269,7 +272,7 @@ export class Server {
               socket.destroy();
               return;
             }
-            const refreshedToken = await this._generateAccessTokenFromRefreshToken(refreshToken);
+            const refreshedToken = await this._auth?.options.generateAccessToken(refreshToken);
             if (!refreshedToken) {
               socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
               socket.destroy();
@@ -689,185 +692,9 @@ export class Server {
     }
   }
 
-  protected async _generateAccessTokenFromRefreshToken(refreshToken: string): Promise<{ user: any, token: string } | undefined> {
-    // Should be implemented when using this framework
-    return { user: {}, token: '' };
-  }
-
-  protected async _revokeRefreshToken(refreshToken: string): Promise<void> {
-    // Should be implemented when using this framework
-  }
-
-  protected _refreshToken = async (req: Request, res: Response): Promise<any> => {
-    let refreshToken = req.cookies.refresh;
-    let refreshTokenCookie = true;
-    if (!refreshToken) {
-      if (!req.body || !req.body.refreshToken) {
-        res.status(401).send("No refresh token provided");
-        return;
-      }
-      refreshToken = req.body.refreshToken;
-      refreshTokenCookie = false;
-    }
-
-    const token = await this._generateAccessTokenFromRefreshToken(refreshToken);
-    if (!token) {
-      res.status(401).send("Refresh token not valid");
-      return;
-    }
-
-    if (refreshTokenCookie) {
-      res.cookie('auth', token.token, { maxAge: 5 * 60 * 1000 });
-    } else {
-      res.json(token);
-    }
-    return token;
-  }
-
   protected async _registerAuth(authOptions: IAuthOptions): Promise<void> {
-    this._app.set('trust proxy', authOptions.trustProxy); // trust first proxy
-    this._app.use(cookieParser());
+    this._auth = AuthManager.getInstance(authOptions);
 
-    const router = Router();
-
-    router.use(express.json());
-
-    router.use(Cors({
-      credentials: true,
-    }));
-
-    passport.use('jwtAuth', new JWTStrategy({
-      jwtFromRequest: this._cookieExtractor,
-      secretOrKey: authOptions.publicKey,
-      issuer: process.env.AUTH_ISSUER || 'all41',
-      audience: process.env.AUTH_AUDIENCE || 'all41',
-      algorithms: ['RS256'],
-    },
-    (jwtPayload, done) => {
-      return done(null, jwtPayload);
-    }
-    ));
-
-    for (const [name, strategy] of Object.entries(authOptions.strategies)) {
-      passport.use(name, strategy);
-      router.get('/' + name, (req, res, next) => {
-        const redirectUri = req.query.redirectUrl;
-        const failureRedirect = req.query.failureRedirect;
-        if (redirectUri) {
-          res.cookie('redirect', redirectUri, { maxAge: 5 * 60 * 1000 });
-        }
-        if (failureRedirect) {
-          res.cookie('failureRedirect', failureRedirect, { maxAge: 5 * 60 * 1000 });
-        }
-        next();
-      },
-      passport.authenticate(name, { session: false })
-      );
-
-      router.get('/' + name + '/callback',
-        (req, res, next) => {
-          const failureRedirect = req.cookies['failureRedirect'] || this.options.auth?.redirectAfterLogout || '/';
-          passport.authenticate(name, { session: false },
-            (err: any, user: any, info: any) => {
-              if (err) {
-                return res.status(401).json({ message: err.message });
-              }
-              if (!user) {
-                const query = querystring.stringify({ error: info.message });
-                res.clearCookie('failureRedirect');
-                res.clearCookie('redirect');
-                return res.redirect(failureRedirect + (query ? '?' + query : ''));
-              }
-              req.user = user;
-              next();
-            }
-          )(req, res, next)
-        }, this._generateJWT(this.options.auth?.redirectAfterLogin)
-      );
-    }
-
-    router.get('/logout', (req, res) => {
-      // clear refresh token
-      this._revokeRefreshToken(req.cookies.refresh);
-      res.clearCookie('auth');
-      res.clearCookie('refresh');
-      res.redirect(this.options.auth?.redirectAfterLogout || '/');
-    });
-
-    router.get('/profile', this._authWithJwtOrMasterApiKey, (req, res) => {
-      res.json({
-        username: (req.user as any).user.username,
-        email: (req.user as any).user.email,
-        firstName: (req.user as any).user.firstName,
-        lastName: (req.user as any).user.lastName,
-      });
-    });
-
-    router.post('/refresh', this._refreshToken);
-
-    this._app.use('/auth', router);
-  }
-
-  protected readonly _authWithJwtOrMasterApiKey = (req: Request, res: Response, next: any) => {
-    if (req.headers.authorization) {
-      const authorization = req.headers.authorization.split(' ');
-      if (authorization.length === 2 && authorization[0] === 'Bearer') {
-        const token = authorization[1];
-        if (token && token === this.masterApiKey) {
-          next();
-          return;
-        }
-      }
-      return res.sendStatus(401)
-    }
-    passport.authenticate('jwtAuth', { session: false }, async (error : any, token : any) => {
-      if (error || !token) {
-        // try to refresh token
-        if (!req.cookies['auth'] && !req.cookies['refresh']) {
-          return res.status(401).send("Unauthorized");
-        }
-        token = await this._refreshToken(req, res);
-      }
-      if(!token) return res.status(401).send("Unauthorized");
-      req.user = { user: token.user };
-      next();
-    })(req, res, next);
-  }
-
-  protected async _saveRefreshToken(userId: string): Promise<string> {
-    // Should be implemented when using this framework
-    return "";
-  }
-
-  private _generateJWT(redirectUri?: string): (req: Request, res: Response) => Promise<any> {
-    return async (req: Request, res: Response) => {
-      if (!this.options.auth || !this.options.auth.privateKey) {
-        throw new Error('No private key provided for JWT generation');
-      }
-      if (!req.user) {
-        throw new Error('No user found in request');
-      }
-      const accessToken = jwt.sign({ user: req.user }, this.options.auth.privateKey, { algorithm: 'RS256', expiresIn: '1m', issuer: process.env.AUTH_ISSUER || 'all41', audience: process.env.AUTH_AUDIENCE || 'all41', subject: (req.user as any).uuid });
-      const refreshToken = await this._saveRefreshToken((req.user as { uuid: string }).uuid);
-      let redirectAfter = redirectUri || '/';
-      if (req.cookies['redirect']) {
-        redirectAfter = req.cookies['redirect'];
-        res.clearCookie('redirect');
-        res.clearCookie('failureRedirect');
-        redirectAfter += '?' + querystring.stringify({ accessToken, refreshToken });
-      } else {
-        res.cookie('auth', accessToken, { maxAge: 5 * 60 * 1000 });
-        res.cookie('refresh', refreshToken, { maxAge: 24 * 60 * 60 * 1000 });
-      }
-      res.redirect(redirectAfter || '/');
-    };
-  }
-
-  private _cookieExtractor(req: Request): string | null {
-    let token = null;
-    if (req && req.cookies) {
-      token = req.cookies['auth'];
-    }
-    return token;
+    this.app.use('/auth', this._auth.init());
   }
 }
