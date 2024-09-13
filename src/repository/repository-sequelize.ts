@@ -1,5 +1,5 @@
 import { Model, Repository as SequelizeNativeRepository } from 'sequelize-typescript';
-import { FindOptions, SaveOptions, BuildOptions, Utils as SQLUtils, IncludeOptions } from 'sequelize';
+import { FindOptions, SaveOptions, BuildOptions, Utils as SQLUtils, Includeable } from 'sequelize';
 import { Server } from '../server';
 import { IPkName, Repository, IRepositoryReadable, IRepositoryWritableDb } from './repository';
 import { Utils } from "../utils";
@@ -22,6 +22,7 @@ export class RepositorySequelize<T extends Model<T> & IPkName<T>> implements Rep
     if (!sequelizeRepository) throw new Error(`Repository for '${this.modelType.prototype.constructor.name}' not found`);
     return sequelizeRepository;
   }
+
   public async post(object: T): Promise<T> {
     return await this._sequelizeRepository.create(object as any);
   }
@@ -38,8 +39,10 @@ export class RepositorySequelize<T extends Model<T> & IPkName<T>> implements Rep
   public async getByKey(key: any, options?: FindOptions<T>): Promise<T> {
     if ([undefined, null].includes(key)) throw new Error('getByKey invoked without key value');
 
+    if (options?.include) options.include = this._generateIncludes(options?.include);
     const localOptions = {[this._sequelizeRepository.primaryKeyAttribute]: key};
     Object.assign(localOptions, options);
+
     const result = await this._sequelizeRepository.findByPk(key, options);
     if (result === null) throw new Error(`No record found with key '${key} on repository '${this.modelType.constructor.name}`);
     Utils.inst.dateToDateTime(result);
@@ -53,25 +56,7 @@ export class RepositorySequelize<T extends Model<T> & IPkName<T>> implements Rep
     //   isAliased: true,
     // };
 
-    if (options.include) {
-      if (typeof(options.include) === 'string') options.include = [options.include];
-      for (const i in (options.include as string[])) {
-        const splited = (options.include as string[])[i].split('/')
-        if (splited.length > 1) {
-          const nested: IncludeOptions = {association: splited[0]}
-          let currentNested = nested
-          for (let j = 1; j < splited.length;  j++) {
-            const subNested: IncludeOptions = {association: splited[j]}
-            currentNested.include = [subNested]
-            currentNested = subNested
-          }
-          // @ts-ignore
-          options.include[i] = nested
-        }
-      }
-    }
-
-
+    if (options?.include) options.include = this._generateIncludes(options.include)
     const result = await this._sequelizeRepository.findAll(options);
     Utils.inst.dateToDateTime(result);
     return result;
@@ -84,5 +69,25 @@ export class RepositorySequelize<T extends Model<T> & IPkName<T>> implements Rep
       result = await this.getByKey(options);
     }
     return result as any;
+  }
+
+  protected _generateIncludes(include: any): Includeable[] {
+    if (!include) return [];
+    if (typeof(include) === 'string') include = [include];
+    for (const i in include ) {
+      const splited = include[i].split('/')
+      if (splited.length > 1) {
+        const nested: Includeable = {association: splited[0]}
+        let currentNested = nested
+        for (let j = 1; j < splited.length;  j++) {
+          const subNested: Includeable = {association: splited[j]}
+          currentNested.include = [subNested]
+          currentNested = subNested
+        }
+        // @ts-ignore
+        include[i] = nested
+      }
+    }
+    return include
   }
 }
