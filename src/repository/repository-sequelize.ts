@@ -1,5 +1,5 @@
 import { Model, Repository as SequelizeNativeRepository } from 'sequelize-typescript';
-import { FindOptions, SaveOptions, BuildOptions, Utils as SQLUtils } from 'sequelize';
+import { FindOptions, SaveOptions, BuildOptions, Utils as SQLUtils, IncludeOptions } from 'sequelize';
 import { Server } from '../server';
 import { IPkName, Repository, IRepositoryReadable, IRepositoryWritableDb } from './repository';
 import { Utils } from "../utils";
@@ -52,7 +52,25 @@ export class RepositorySequelize<T extends Model<T> & IPkName<T>> implements Rep
     // const foo: Includeable = {
     //   isAliased: true,
     // };
-  
+
+    if (options.include) {
+      if (typeof(options.include) === 'string') options.include = [options.include];
+      for (const i in (options.include as string[])) {
+        const splited = (options.include as string[])[i].split('/')
+        if (splited.length > 1) {
+          const nested: IncludeOptions = {association: splited[0]}
+          let currentNested = nested
+          for (let j = 1; j < splited.length;  j++) {
+            const subNested: IncludeOptions = {association: splited[j]}
+            currentNested.include = [subNested]
+            currentNested = subNested
+          }
+          // @ts-ignore
+          options.include[i] = nested
+        }
+      }
+    }
+
 
     const result = await this._sequelizeRepository.findAll(options);
     Utils.inst.dateToDateTime(result);
@@ -60,7 +78,7 @@ export class RepositorySequelize<T extends Model<T> & IPkName<T>> implements Rep
   }
   public async patch(key: any, object: Partial<T>, options?: SaveOptions<T>): Promise<T> {
     const foundRecord = await this.getByKey(key);
-    
+
     let result = await foundRecord.set(object).save();
     if (options) {
       result = await this.getByKey(options);

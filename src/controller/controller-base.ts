@@ -26,7 +26,7 @@ export abstract class ControllerBase {
   public defineRoutes(...routes: IRouteDefinition[]): void {
     routes.forEach((r) => this.defineRoute(r));
   }
-  
+
   public registerRoutes(router: Router, ...routes: Array<IRouteDefinition>) {
     routes.forEach((route) => router[route.verb](route.path, this.injectThis(route.handlers)));
   }
@@ -55,24 +55,6 @@ export abstract class ControllerBase {
     res.render(view, options);
   }
 
-  public generateIncludes(include: any): any {
-    if(!include) return
-    if (typeof(include) === 'string') include = [include];
-    for (const i in include) {
-      const splited = include[i].split('/')
-      if (splited.length > 1) {
-        const nested: any = {association: splited[0]}
-        let currentNested = nested
-        for (let j = 1; j < splited.length;  j++) {
-          const subNested: any = {association: splited[j]}
-          currentNested.include = [subNested]
-          currentNested = subNested
-        }
-        include[i] = nested
-      }
-    }
-    return include
-  }
   protected createBase(router?: Router) {
     const usedRouter = router || Router();
     this.registerRoutes(usedRouter, ...this.routes);
