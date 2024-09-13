@@ -28,7 +28,6 @@ export class ControllerRepositoryReadWrite<R extends Repository<T> & IRepository
   public post = ControllerRepositoryWriteonly.prototype.post;
   public patch = ControllerRepositoryWriteonly.prototype.patch;
   public delete = ControllerRepositoryWriteonly.prototype.delete;
-  public generateIncludes = ControllerRepositoryReadonly.prototype.generateIncludes;
 }
 
 export class ControllerRepositoryReadonly<T extends IPkName<T>, R extends Repository<T> & IRepositoryReadable<T>> extends ControllerBase {
@@ -72,25 +71,6 @@ export class ControllerRepositoryReadonly<T extends IPkName<T>, R extends Reposi
     } catch (err: unknown) {
       Utils.inst.handleCatch(err as Error, res);
     }
-  }
-
-  public generateIncludes(include: any): any {
-    if(!include) return
-    if (typeof(include) === 'string') include = [include];
-    for (const i in include) {
-      const splited = include[i].split('/')
-      if (splited.length > 1) {
-        const nested: any = {association: splited[0]}
-        let currentNested = nested
-        for (let j = 1; j < splited.length;  j++) {
-          const subNested: any = {association: splited[j]}
-          currentNested.include = [subNested]
-          currentNested = subNested
-        }
-        include[i] = nested
-      }
-    }
-    return include
   }
 }
 
