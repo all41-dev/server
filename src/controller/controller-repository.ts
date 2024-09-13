@@ -28,6 +28,7 @@ export class ControllerRepositoryReadWrite<R extends Repository<T> & IRepository
   public post = ControllerRepositoryWriteonly.prototype.post;
   public patch = ControllerRepositoryWriteonly.prototype.patch;
   public delete = ControllerRepositoryWriteonly.prototype.delete;
+  public generateIncludes = ControllerRepositoryReadonly.prototype.generateIncludes;
 }
 
 export class ControllerRepositoryReadonly<T extends IPkName<T>, R extends Repository<T> & IRepositoryReadable<T>> extends ControllerBase {
