@@ -50,7 +50,7 @@ export class ControllerRepositoryReadonly<T extends IPkName<T>, R extends Reposi
 
   public async getAll(req: Request, res: Response): Promise<void> {
     try {
-      const include = this._generateIncludes(req.query.include);
+      const include = this.generateIncludes(req.query.include);
       const where = req.query.filter;// TODO will probably not work "as is"
       const options = where || include ? { where, include } : undefined;
 
@@ -63,7 +63,7 @@ export class ControllerRepositoryReadonly<T extends IPkName<T>, R extends Reposi
 
   public async getById(req: Request, res: Response): Promise<void> {
     try {
-      const include = this._generateIncludes(req.query.include);
+      const include = this.generateIncludes(req.query.include);
       const options = include ? { include } : undefined;
       const result = await (req as IControllerInstanceType<ControllerRepositoryReadonly<T, R>>)._this._repository.getByKey(req.params.id, options);
 
@@ -73,7 +73,7 @@ export class ControllerRepositoryReadonly<T extends IPkName<T>, R extends Reposi
     }
   }
 
-  private _generateIncludes(include: any): any {
+  public generateIncludes(include: any): any {
     if(!include) return
     if (typeof(include) === 'string') include = [include];
     for (const i in include) {
