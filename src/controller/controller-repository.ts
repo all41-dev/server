@@ -73,15 +73,16 @@ export class ControllerRepositoryReadonly<T extends IPkName<T>, R extends Reposi
     }
   }
 
-  private _generateIncludes(include: string | string[]): any {
+  private _generateIncludes(include: any): any {
+    if(!include) return
     if (typeof(include) === 'string') include = [include];
     for (const i in include) {
       const splited = include[i].split('/')
       if (splited.length > 1) {
-        let nested: any = {association: splited[0]}
+        const nested: any = {association: splited[0]}
         let currentNested = nested
         for (let j = 1; j < splited.length;  j++) {
-          let subNested: any = {association: splited[j]}
+          const subNested: any = {association: splited[j]}
           currentNested.include = [subNested]
           currentNested = subNested
         }
