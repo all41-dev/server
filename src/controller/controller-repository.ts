@@ -50,7 +50,7 @@ export class ControllerRepositoryReadonly<T extends IPkName<T>, R extends Reposi
 
   public async getAll(req: Request, res: Response): Promise<void> {
     try {
-      const include = req.query.include;
+      const include = this._generateIncludes(req.query.include);
       const where = req.query.filter;// TODO will probably not work "as is"
       const options = where || include ? { where, include } : undefined;
 
@@ -63,7 +63,7 @@ export class ControllerRepositoryReadonly<T extends IPkName<T>, R extends Reposi
 
   public async getById(req: Request, res: Response): Promise<void> {
     try {
-      const include = req.query.include;
+      const include = this._generateIncludes(req.query.include);
       const options = include ? { include } : undefined;
       const result = await (req as IControllerInstanceType<ControllerRepositoryReadonly<T, R>>)._this._repository.getByKey(req.params.id, options);
 
@@ -71,6 +71,24 @@ export class ControllerRepositoryReadonly<T extends IPkName<T>, R extends Reposi
     } catch (err: unknown) {
       Utils.inst.handleCatch(err as Error, res);
     }
+  }
+
+  private _generateIncludes(include: string | string[]): any {
+    if (typeof(include) === 'string') include = [include];
+    for (const i in include) {
+      const splited = include[i].split('/')
+      if (splited.length > 1) {
+        let nested: any = {association: splited[0]}
+        let currentNested = nested
+        for (let j = 1; j < splited.length;  j++) {
+          let subNested: any = {association: splited[j]}
+          currentNested.include = [subNested]
+          currentNested = subNested
+        }
+        include[i] = nested
+      }
+    }
+    return include
   }
 }
 
