@@ -73,19 +73,21 @@ export class RepositorySequelize<T extends Model<T> & IPkName<T>> implements Rep
 
   protected _generateIncludes(include: any): Includeable[] {
     if (!include) return [];
-    if (typeof(include) === 'string') include = [include];
-    for (const i in include ) {
-      const splited = include[i].split('/')
-      if (splited.length > 1) {
-        const nested: Includeable = {association: splited[0]}
-        let currentNested = nested
-        for (let j = 1; j < splited.length;  j++) {
-          const subNested: Includeable = {association: splited[j]}
-          currentNested.include = [subNested]
-          currentNested = subNested
+    if (typeof(include) === 'string'){
+      include = [include];
+      for (const i in include ) {
+        const splited = include[i].split('/')
+        if (splited.length > 1) {
+          const nested: Includeable = {association: splited[0]}
+          let currentNested = nested
+          for (let j = 1; j < splited.length;  j++) {
+            const subNested: Includeable = {association: splited[j]}
+            currentNested.include = [subNested]
+            currentNested = subNested
+          }
+          // @ts-ignore
+          include[i] = nested
         }
-        // @ts-ignore
-        include[i] = nested
       }
     }
     return include
