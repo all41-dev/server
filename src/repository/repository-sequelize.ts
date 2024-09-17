@@ -73,7 +73,7 @@ export class RepositorySequelize<T extends Model<T> & IPkName<T>> implements Rep
 
   protected _generateIncludes(include: any): Includeable[] {
     if (!include) return [];
-    if (typeof(include) === 'string'){
+    if (typeof(include) === 'string' || Array.isArray(include) ){
       include = [include];
       for (const i in include ) {
         const splited = include[i].split('/')
