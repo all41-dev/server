@@ -24,7 +24,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@all41-dev/db-tools": "^1.3.6",
+    "@all41-dev/db-tools": "^1.4.0",
     "@all41-dev/iam.api": "^2.0.0-beta.6",
     "@all41-dev/log": "^1.2.0",
     "@all41-dev/node-fetch": "^2.6.12",
