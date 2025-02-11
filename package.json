@@ -57,7 +57,7 @@
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.1.13",
     "semver": "^7.5.4",
-    "winston": "^3.8.2",
+    "winston": "^3.17.0",
     "ws": "^8.17.1",
     "xmlhttprequest": "^1.8.0"
   },

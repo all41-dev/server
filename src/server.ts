@@ -76,7 +76,7 @@ export class Server {
             winston.format.timestamp(),
             winston.format.printf(ev => `${ev.timestamp}> ${ev.level}: ${ev.message}`),
             // winston.format.errors(),
-          ), level: options.consoleLogLevel || options.loggerOptions.level || 'debug',
+          ), level: options.consoleLogLevel || options.loggerOptions.level || 'debug', 
         }));
       }
 
