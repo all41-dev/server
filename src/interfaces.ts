@@ -3,10 +3,8 @@ import { Db, IDbOptions } from '@all41-dev/db-tools';
 import { Ui } from './ui';
 import { LoggerOptions } from 'winston';
 import AMQP from 'amqplib';
-import { Repository } from './repository/repository';
-import { Workflow, WorkflowContext } from './workflow/workflow';
+import { Repository, Workflow, WorkflowContext } from '@all41-dev/server.types';
 import { WebSocketServer } from 'ws';
-import { Strategy } from 'passport';
 import { IAuthOptions } from '@all41-dev/iam.api';
 
 export interface IServerOptions {
@@ -16,10 +14,10 @@ export interface IServerOptions {
   uis?: IUiOptions<Ui<any>> | IUiOptions<Ui<any>>[];
   dbs?: IDbOptions<Db<any>> | IDbOptions<Db<any>>[];
   jobs?: IJobOptions | IJobOptions[];
-  amqp?: {[key: string]: IAmqpOptions};
+  amqp?: { [key: string]: IAmqpOptions };
   statics?: IStaticRouteOptions | IStaticRouteOptions[];
   repositories?: { [key: string]: Repository<any> };
-  workflows?: { [key: string]: new(context: WorkflowContext) => Workflow<any> };
+  workflows?: { [key: string]: new (context: WorkflowContext) => Workflow<any> };
   websockets?: { [key: string]: IWsOptions };
   loggerOptions?: LoggerOptions;
   skipJobScheduleAtStartup?: boolean;
@@ -33,7 +31,7 @@ export interface IRouteOptions extends IMuteable {
 }
 
 export interface IApiOptions<T extends Api<any>> extends IRouteOptions {
-  type: { new(options: IApiOptions<T>): T};
+  type: { new(options: IApiOptions<T>): T };
   config?: any;
   requireAuth?: boolean;
   amqp?: string;
@@ -50,7 +48,7 @@ export interface IJobOptions extends IMuteable {
 }
 
 export interface IUiOptions<T extends Ui<any>> extends IRouteOptions {
-  type: {  inst: T; new(options: IUiOptions<T>): T};
+  type: { inst: T; new(options: IUiOptions<T>): T };
   config?: any;
   requireAuth?: boolean;
   requireScope?: string[];

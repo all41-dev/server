@@ -1,13 +1,11 @@
 import { Server } from '../src/server';
 import * as chai from 'chai';
-// import chaiHttp from 'chai-http';
 import { Api } from '../src/api';
 import { Router } from 'express';
-import { ControllerBase } from '../src/controller/controller-base';
-import { Db } from '@all41-dev/db-tools';
+import { ControllerBase } from '@all41-dev/server.types';
 import { TestDb } from "../src/test/test-db";
-import { Table, Model, PrimaryKey, AutoIncrement, Column, AllowNull, Unique, DataType } from 'sequelize-typescript';
-import chaiHttp = require('chai-http');
+import { Table, Model, PrimaryKey, Default, Column, AllowNull, Unique, DataType } from 'sequelize-typescript';
+import chaiHttp from 'chai-http';
 import AMQP from "amqplib";
 chai.use(chaiHttp);
 
@@ -25,12 +23,12 @@ export class TestApi extends Api<TestApi> {
 @Table({ modelName: 'person', tableName: 'person', timestamps: false })
 export class DbPerson extends Model {
   @PrimaryKey
-  @AutoIncrement
-  @Column(DataType.INTEGER)
-  public uuid!: number;
+  @Default(DataType.UUIDV4)
+  @Column(DataType.UUID)
+  public uuid!: string;
 
   @AllowNull(false)
-  @Unique
+  @Unique(true)
   @Column(DataType.STRING(30))
   public name!: string;
 }
@@ -81,7 +79,7 @@ describe('Server class', () => {
       }],
     })
     server.start().then(() =>
-    // error http://localhost/test/api don't respond
+      // error http://localhost/test/api don't respond
       chai.request(server.app).get('/test/api')
         .then((res) => {
           DbPerson.findAll().then((res) => {
@@ -126,15 +124,17 @@ describe('Server class', () => {
 });
 
 describe("AMQPMethods", async () => {
-  let server : Server;
+  let server: Server;
 
   beforeEach(() => {
     server = new Server({
-      amqp: {'local': {
-        AMQP_URL: 'amqp://ops_server:ops_server_pass@localhost',
-        connection: undefined,
-        channels: {},
-      }},
+      amqp: {
+        'local': {
+          AMQP_URL: 'amqp://ops_server:ops_server_pass@localhost',
+          connection: undefined,
+          channels: {},
+        }
+      },
     });
     server.start();
   });
@@ -143,16 +143,16 @@ describe("AMQPMethods", async () => {
     server.stop();
   });
 
-  it("Connection",() => {
+  it("Connection", () => {
     server.amqpConnect('local');
   }).timeout(0);
 
-  it("Disconnect",() => {
+  it("Disconnect", () => {
     server.amqpConnect('local');
     server.amqpDisconnect('local');
   }).timeout(0);
 
-  it("Connect to unknown id",() => {
+  it("Connect to unknown id", () => {
     try {
       server.amqpConnect('unknown');
       chai.assert(false);
@@ -170,7 +170,7 @@ describe("AMQPMethods", async () => {
     }
   }).timeout(0);
 
-  it("Create channel",() => {
+  it("Create channel", () => {
     server.amqpConnect('local');
     try {
       server.amqpCreateChannel('local', 'test');
@@ -181,7 +181,7 @@ describe("AMQPMethods", async () => {
     server.amqpDisconnect('local');
   }).timeout(0);
 
-  it("Create channel with unknown id",() => {
+  it("Create channel with unknown id", () => {
     server.amqpConnect('local');
     try {
       server.amqpCreateChannel('unknown', 'test');
@@ -191,7 +191,7 @@ describe("AMQPMethods", async () => {
     }
   }).timeout(0);
 
-  it("Delete channel",() => {
+  it("Delete channel", () => {
     server.amqpConnect('local');
     server.amqpCreateChannel('local', 'test');
     try {
@@ -203,7 +203,7 @@ describe("AMQPMethods", async () => {
     server.amqpDisconnect('local');
   }).timeout(0);
 
-  it("Delete channel with unknown id",() => {
+  it("Delete channel with unknown id", () => {
     server.amqpConnect('local');
     try {
       server.amqpDeleteChannel('unknown', 'test');
@@ -213,7 +213,7 @@ describe("AMQPMethods", async () => {
     }
   }).timeout(0);
 
-  it("Delete channel with unknown name",() => {
+  it("Delete channel with unknown name", () => {
     server.amqpConnect('local');
     try {
       server.amqpDeleteChannel('local', 'test');
@@ -224,7 +224,7 @@ describe("AMQPMethods", async () => {
     server.amqpDisconnect('local');
   }).timeout(0);
 
-  it("Create exchange",() => {
+  it("Create exchange", () => {
     server.amqpConnect('local');
     server.amqpCreateChannel('local', 'test');
     try {
@@ -238,7 +238,7 @@ describe("AMQPMethods", async () => {
     server.amqpDisconnect('local');
   }).timeout(0);
 
-  it("Create exchange with unknown name",() => {
+  it("Create exchange with unknown name", () => {
     server.amqpConnect('local');
     server.amqpCreateChannel('local', 'test');
     try {
@@ -251,7 +251,7 @@ describe("AMQPMethods", async () => {
     server.amqpDisconnect('local');
   }).timeout(0);
 
-  it("Create exchange with invalid type",() => {
+  it("Create exchange with invalid type", () => {
     server.amqpConnect('local');
     server.amqpCreateChannel('local', 'test');
     try {
@@ -264,7 +264,7 @@ describe("AMQPMethods", async () => {
     server.amqpDisconnect('local');
   }).timeout(0);
 
-  it("Delete exchange",() => {
+  it("Delete exchange", () => {
     server.amqpConnect('local');
     server.amqpCreateChannel('local', 'test');
     server.amqpCreateExchange('local', 'test', 'test', "direct");
@@ -278,7 +278,7 @@ describe("AMQPMethods", async () => {
     server.amqpDisconnect('local');
   }).timeout(0);
 
-  it("Delete exchange with unknown name",() => {
+  it("Delete exchange with unknown name", () => {
     server.amqpConnect('local');
     server.amqpCreateChannel('local', 'test');
     try {
@@ -291,7 +291,7 @@ describe("AMQPMethods", async () => {
     server.amqpDisconnect('local');
   }).timeout(0);
 
-  it("Create queue",() => {
+  it("Create queue", () => {
     server.amqpConnect('local');
     server.amqpCreateChannel('local', 'test');
     server.amqpCreateExchange('local', 'test', 'test', "direct");
@@ -305,7 +305,7 @@ describe("AMQPMethods", async () => {
     server.amqpDisconnect('local');
   }).timeout(0);
 
-  it("Delete queue",() => {
+  it("Delete queue", () => {
     server.amqpConnect('local');
     server.amqpCreateChannel('local', 'test');
     server.amqpCreateExchange('local', 'test', 'test', "direct");
@@ -320,7 +320,7 @@ describe("AMQPMethods", async () => {
     server.amqpDisconnect('local');
   }).timeout(0);
 
-  it("Send message",() => {
+  it("Send message", () => {
     server.amqpConnect('local');
     server.amqpCreateChannel('local', 'test');
     server.amqpCreateExchange('local', 'test', 'test', "fanout");
@@ -335,15 +335,15 @@ describe("AMQPMethods", async () => {
     server.amqpDisconnect('local');
   }).timeout(0);
 
-  it("Receive message",() => {
+  it("Receive message", () => {
     server.amqpConnect('local');
     server.amqpCreateChannel('local', 'test');
     server.amqpCreateExchange('local', 'test', 'test', "direct");
     server.amqpCreateQueue('local', 'test', 'test', 'test', 'test');
     server.amqpSend('local', 'test', 'test', 'test', 'test');
     try {
-      server.amqpReceive('local', 'test', 'test', (msg : AMQP.Message) => {
-        if(msg) {
+      server.amqpReceive('local', 'test', 'test', (msg: AMQP.Message) => {
+        if (msg) {
           chai.assert(true);
         } else {
           chai.assert(false);

@@ -1,7 +1,8 @@
 import { SampleAMQPRepository, SampleSequelizeRepository, SampleTable } from "../test/sample-repository";
-import { Action, Actor, WorkflowContext, Workflow } from "../workflow/workflow";
+import { Action, Actor, WorkflowContext, Workflow } from "@all41-dev/server.types";
 
-export class SampleWorkflow<C extends WorkflowContext = WorkflowContext> extends Workflow<SampleTable, C> implements Workflow<SampleTable, C>{
+
+export class SampleWorkflow<C extends WorkflowContext = WorkflowContext> extends Workflow<SampleTable, C> implements Workflow<SampleTable, C> {
   modelType: new (plainObj?: Partial<SampleTable> | undefined) => SampleTable;
   actors: { [key: string]: Actor<SampleTable>; };
   actions: { [key: string]: Action<SampleTable, C> };
@@ -12,7 +13,7 @@ export class SampleWorkflow<C extends WorkflowContext = WorkflowContext> extends
     this.modelType = SampleTable;
     this.actors = {
       sequelize: {
-        repository: new SampleSequelizeRepository(),
+        repository: new SampleSequelizeRepository(SampleTable),
       },
       amqp: {
         repository: new SampleAMQPRepository as any, // TODO fix this any use

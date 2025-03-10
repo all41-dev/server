@@ -1,12 +1,15 @@
 /* eslint-disable @typescript-eslint/member-ordering */
 import { Request, Response, Router } from 'express';
 import { EntityRequest, PkPropType } from '../entity-request';
-import { ControllerBase } from './controller-base';
+import { ControllerBase } from '@all41-dev/server.types';
 import { Model } from 'sequelize-typescript';
 import { Server } from '../server';
 
 /**
- * @example .
+ * @example
+ *
+ * @deprecated Legacy class.
+ * Use the new {ControllerRepository} base class from the 'all41-dev/server.types'.
  */
 export class RequestController<ENT extends EntityRequest<Model, any & PkPropType>> extends ControllerBase {
   constructor(er: new () => ENT) {
@@ -44,7 +47,7 @@ export class RequestController<ENT extends EntityRequest<Model, any & PkPropType
     er.setIncludes(req.query.include as any);
 
     return er.get(req.params.id)
-      .then((data): void => {res.json(data)} )
+      .then((data): void => { res.json(data) })
       .catch((reason): void => {
         res.status(500).json(reason);
         Server.logger.error(reason);
@@ -54,7 +57,7 @@ export class RequestController<ENT extends EntityRequest<Model, any & PkPropType
     er.setIncludes(req.query.include as any);
 
     return er.post(req.body)
-      .then((data): void => {res.json(data)} )
+      .then((data): void => { res.json(data) })
       .catch((reason): void => {
         res.status(500).json(reason);
         Server.logger.error(reason);
@@ -64,7 +67,7 @@ export class RequestController<ENT extends EntityRequest<Model, any & PkPropType
     er.setIncludes(req.query.include as any);
 
     return er.patch({ receivedObj: req.body, keyValue: req.params.id, fields: req.query.fields as any })
-      .then((data): void => {res.json(data)} )
+      .then((data): void => { res.json(data) })
       .catch((reason): void => {
         res.status(500).json(reason);
         Server.logger.error(reason);
@@ -72,7 +75,7 @@ export class RequestController<ENT extends EntityRequest<Model, any & PkPropType
   }
   public async delete(req: Request, res: Response, er: ENT): Promise<void> {
     return er.del(req.params.id)
-      .then((): void => { res.send(); } )
+      .then((): void => { res.send(); })
       .catch((reason): void => {
         res.status(500).json(reason);
         Server.logger.error(reason);

@@ -1,12 +1,17 @@
 import { DestroyOptions, FindOptions, Utils } from 'sequelize';
 import { Model } from 'sequelize-typescript';
 
-export type PkPropType = { [key: string|number]: any; pkPropName: keyof PkPropType & string; };
+/**
+ *
+ * @deprecated Legacy class
+ */
+
+export type PkPropType = { [key: string | number]: any; pkPropName: keyof PkPropType & string; };
 export abstract class EntityRequest<T1 extends Model<T1>, T2 extends PkPropType> {
   protected _findOptions: FindOptions = {};
   private _dbType: (new (values?: Utils.MakeNullishOptional<T1>) => T1);
   private _modelType: new () => T2;
-  
+
   public constructor(dbType: new (values?: Utils.MakeNullishOptional<T1>) => T1, modelType: new () => T2) {
     this._dbType = dbType;
     this._modelType = modelType;
@@ -37,7 +42,7 @@ export abstract class EntityRequest<T1 extends Model<T1>, T2 extends PkPropType>
   }
 
   public async post(obj: T2): Promise<T2> {
-    return await this.preCreation(obj).then( async (obj1): Promise<T2> => {
+    return await this.preCreation(obj).then(async (obj1): Promise<T2> => {
       const dbProps: any = await this.clientToDb(obj1);
       const dbObj = new this._dbType(dbProps.dataValues);
       const savedInst = await dbObj.save(this._findOptions);
@@ -69,7 +74,7 @@ export abstract class EntityRequest<T1 extends Model<T1>, T2 extends PkPropType>
     }).catch((err) => { throw new Error(`update failed => ${err}`); });
   }
 
-  public async del(id: number|string): Promise<void> {
+  public async del(id: number | string): Promise<void> {
     const options: DestroyOptions = {
       where: { [(this._dbType as any).primaryKeyAttribute]: id }
     };
@@ -81,7 +86,7 @@ export abstract class EntityRequest<T1 extends Model<T1>, T2 extends PkPropType>
       throw new Error(`delete failed => ${err}`);
     }
   }
-  
+
   protected async dbFindAll(options: FindOptions): Promise<T1[]> {
     return await (this._dbType as any).findAll(options);
   }
@@ -105,14 +110,14 @@ export abstract class EntityRequest<T1 extends Model<T1>, T2 extends PkPropType>
     }
     return obj;
   }
-  
+
   public abstract dbToClient(dbObj: T1): Promise<T2>;
   public abstract clientToDb(clientObj: T2): Promise<T1>;
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   public abstract setFilter(opt: any): void;
   public abstract preCreation(obj: T2): Promise<T2>;
   public abstract preUpdate(obj: T2): Promise<T2>;
-  public abstract preDelete(id: number|string): Promise<number>;
+  public abstract preDelete(id: number | string): Promise<number>;
   public abstract postCreation(obj: T1): Promise<T1>;
   public abstract setIncludes(includePaths: string[]): void;
 }

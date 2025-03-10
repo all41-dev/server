@@ -15,17 +15,12 @@ import { Db, IDbOptions } from '@all41-dev/db-tools';
 import { Api } from './api';
 import { Ui } from './ui';
 import os from 'os';
-import { Repository } from './repository/repository';
-import { Workflow, WorkflowContext } from './workflow/workflow';
+import { Repository, Workflow, WorkflowContext } from '@all41-dev/server.types';
 import { WebSocketServer } from 'ws';
-import passport from 'passport';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
-import { Request, Response } from 'express';
-import { Strategy as JWTStrategy } from 'passport-jwt';
 import { IncomingMessage } from 'http';
 import Cors from 'cors';
-import querystring from 'querystring';
 import { AuthManager, IAuthOptions } from '@all41-dev/iam.api';
 
 /**
@@ -76,7 +71,7 @@ export class Server {
             winston.format.timestamp(),
             winston.format.printf(ev => `${ev.timestamp}> ${ev.level}: ${ev.message}`),
             // winston.format.errors(),
-          ), level: options.consoleLogLevel || options.loggerOptions.level || 'debug', 
+          ), level: options.consoleLogLevel || options.loggerOptions.level || 'debug',
         }));
       }
 

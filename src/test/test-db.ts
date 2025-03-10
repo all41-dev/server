@@ -3,7 +3,8 @@ import { SampleTable } from "./sample-repository";
 
 export class TestDb extends Db<TestDb> {
   public async init(): Promise<void> {
-    this._init();
+    await this._init();
+    TestDb.inst = this;
     this.sequelize.addModels([SampleTable]);
   }
 }

@@ -1,9 +1,8 @@
 import { Server } from "./server";
-import { SampleSequelizeRepository, SampleRepository2, SampleTable } from './test/sample-repository';
-import { RepositorySequelize } from "./repository/repository-sequelize";
+import { SampleRepository2, SampleSequelizeRepository, SampleTable } from './test/sample-repository';
 import { TestDb } from "./test/test-db";
 import { SampleWorkflow } from "./test/sample-workflow";
-import { Workflow } from "./workflow/workflow";
+import { Workflow } from "@all41-dev/server.types";
 
 const port = process.env.HTTP_PORT && typeof process.env.HTTP_PORT === 'number' ?
   Number.parseInt(process.env.HTTP_PORT) :
@@ -24,9 +23,7 @@ const server = new Server({
 
   }],
   repositories: {
-    sequelizeDerivedImplicitDbName: new SampleSequelizeRepository(),
-    sequelizeDerivedExplicitDbName: new SampleSequelizeRepository({ dbName: 'spider_server_main_dev' }),
-    sequelizeBase: new RepositorySequelize(SampleTable),
+    sequelizeBase: new SampleSequelizeRepository(SampleTable),
     plain: new SampleRepository2,
   },
   workflows: {
@@ -48,10 +45,10 @@ server.start().then(async () => {
   Server.logger.debug('server started');
   // const repo = server.repositories.sequelizeBase as RepositorySequelize<SampleTable>;
   // const res = await repo.getByKey('7fdac63b-bffc-440d-9ae2-813f123ba113');
-  const wf = new server.workflows.sample({source: 'api', actionContext: { record: { exchangeCode: 'bar' }}}) as Workflow<SampleTable>;
+  const wf = new server.workflows.sample({ source: 'api', actionContext: { record: { exchangeCode: 'bar' } } }) as Workflow<SampleTable>;
   const res = await wf.run();
   // console.log(res);
-  
+
   // server.stop().then(() => {
   //   setTimeout(() => {
   //     server.start();

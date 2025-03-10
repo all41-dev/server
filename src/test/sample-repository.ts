@@ -1,11 +1,11 @@
-import { Model, Table, PrimaryKey, DataType, Column, AllowNull } from 'sequelize-typescript';
-import { IRepositoryReadable, IRepositoryWritable, Repository } from '../repository/repository';
-import { RepositorySequelize } from '../repository/repository-sequelize';
+import { Model, Table, PrimaryKey, DataType, Column, Default, Repository as SequelizeNativeRepository } from 'sequelize-typescript';
+import { IRepositoryReadable, IRepositoryWritable, Repository } from '@all41-dev/server.types';
+import { RepositorySequelize } from '@all41-dev/server.types';
 import { DateTime } from "luxon";
 
 export class SampleSequelizeRepository extends RepositorySequelize<SampleTable> implements Repository<SampleTable> {
-  constructor(options?: { dbName: string }) {
-    super(SampleTable, options?.dbName);
+  constructor(repository: SequelizeNativeRepository<SampleTable>) {
+    super(SampleTable, repository);
   }
   public async init() {
     return this;
@@ -30,32 +30,23 @@ export class SampleAMQPRepository implements Repository<SampleTable>, IRepositor
 
 }
 
-export class SampleTableCreation extends Model<SampleTable> {
+@Table({ tableName: 'exchange', timestamps: false })
+export class SampleTable extends Model {
+  @PrimaryKey
+  @Default(DataType.UUIDV4)
+  @Column(DataType.UUID)
+  declare uuid: string;
+
   @Column(DataType.STRING(200))
-  public exchangeCode?: string;
+  declare exchangeCode?: string;
 
   @Column(DataType.DATE)
-  public fooDate?: DateTime;
-  constructor(values?: Partial<SampleTableCreation>) {
-    super(values as any)
-  }
-}
-
-@Table({ tableName: 'exchange' })
-export class SampleTable extends SampleTableCreation {
-  @PrimaryKey
-  @AllowNull(false)
-  @Column(DataType.UUIDV4)
-  public uuid!: string;
-
-  constructor(values?: Partial<SampleTable>) {
-    super(values as any)
-  }
+  declare fooDate?: DateTime;
 
   public get pkName() { return 'uuid' as keyof SampleTable; }
 }
 
-export class SampleRepository2 implements Repository<SampleType>, IRepositoryReadable<SampleType>  {
+export class SampleRepository2 implements Repository<SampleType>, IRepositoryReadable<SampleType> {
   public modelType: new () => SampleType;
   constructor() {
     this.modelType = SampleType;
