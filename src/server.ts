@@ -267,7 +267,7 @@ export class Server {
               socket.destroy();
               return;
             }
-            const refreshedToken = await this._auth?.options.generateAccessToken(refreshToken);
+            const refreshedToken = await AuthManager.getInstance(this.options.auth).generateAccessToken(refreshToken);
             if (!refreshedToken) {
               socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
               socket.destroy();
