@@ -13,7 +13,7 @@ export class SampleWorkflow<C extends WorkflowContext = WorkflowContext> extends
     this.modelType = SampleTable;
     this.actors = {
       sequelize: {
-        repository: new SampleSequelizeRepository(SampleTable),
+        repository: new SampleSequelizeRepository(),
       },
       amqp: {
         repository: new SampleAMQPRepository as any, // TODO fix this any use

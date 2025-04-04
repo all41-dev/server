@@ -1,11 +1,11 @@
-import { Model, Table, PrimaryKey, DataType, Column, Default, Repository as SequelizeNativeRepository } from 'sequelize-typescript';
+import { Model, Table, PrimaryKey, DataType, Column, Default } from 'sequelize-typescript';
 import { IRepositoryReadable, IRepositoryWritable, Repository } from '@all41-dev/server.types';
 import { RepositorySequelize } from '@all41-dev/server.types';
 import { DateTime } from "luxon";
 
 export class SampleSequelizeRepository extends RepositorySequelize<SampleTable> implements Repository<SampleTable> {
-  constructor(repository: SequelizeNativeRepository<SampleTable>) {
-    super(SampleTable, repository);
+  constructor() {
+    super(SampleTable);
   }
   public async init() {
     return this;
