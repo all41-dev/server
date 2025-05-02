@@ -1,4 +1,4 @@
-import { SampleAMQPRepository, SampleSequelizeRepository, SampleTable } from "../test/sample-repository";
+import { SampleAMQPRepository, SampleSequelizeRepository, SampleTable } from "./sample-repository";
 import { Action, Actor, WorkflowContext, Workflow } from "@all41-dev/server.types";
 
 

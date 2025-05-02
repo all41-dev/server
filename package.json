@@ -25,9 +25,9 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@all41-dev/db-tools": "^1.4.0",
-    "@all41-dev/iam.api": "^3.0.0-beta.22",
-    "@all41-dev/log": "^1.2.0",
+    "@all41-dev/db-tools": "1.4.2",
+    "@all41-dev/iam.api": "^3.0.0-beta.43",
+    "@all41-dev/log": "^1.2.4",
     "@all41-dev/node-fetch": "^2.6.12",
     "@all41-dev/server.types": "^1.0.1-beta.8",
     "@types/amqplib": "^0.10.1",
