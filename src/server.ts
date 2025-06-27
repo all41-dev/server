@@ -225,7 +225,7 @@ export class Server {
           if (route.requireAuth && this._auth) {
             this._app.use(route.path, async (req, res, next) => {
               if (!req.headers['authorization'] && !req.cookies['auth'] && req.cookies['refresh']) {
-                this._auth?.refreshToken(req, res)
+                this._auth?.refreshToken(req)
               }
               next();
             }, this._auth.authMiddleware, route.router);
