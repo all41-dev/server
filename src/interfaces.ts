@@ -5,7 +5,7 @@ import { LoggerOptions } from 'winston';
 import AMQP from 'amqplib';
 import { Repository, Workflow, WorkflowContext } from '@all41-dev/server.types';
 import { WebSocketServer } from 'ws';
-import { IAuthOptions } from '@all41-dev/iam.api';
+import { IAuthOptions } from '@all41-dev/iam';
 
 export interface IServerOptions {
   consoleLogLevel?: string;

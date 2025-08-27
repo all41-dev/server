@@ -21,7 +21,7 @@ import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
 import { IncomingMessage } from 'http';
 import Cors from 'cors';
-import { AuthManager, IAuthOptions } from '@all41-dev/iam.api';
+import { AuthManager, IAuthOptions } from '@all41-dev/iam';
 
 /**
  * @description hosts all microservice functionalities
