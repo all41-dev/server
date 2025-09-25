@@ -1,27 +1,35 @@
-import minimist from 'minimist';
+import minimist from "minimist";
 import AMQP from "amqplib";
 const args = minimist(process.argv.slice(2));
 // eslint-disable-next-line no-console
-if (args.ENV_FILE_PATH) console.info(`Using config file: ${args.ENV_FILE_PATH}`);
-args.ENV_FILE_PATH ?
-  require('dotenv').config({ path: args.ENV_FILE_PATH }) :
-  require('dotenv').config();
-import express, { Router } from 'express';
-import * as http from 'http';
-import { IApiOptions, IJobOptions, IServerOptions, IUiOptions, IStaticRouteOptions, IAmqpOptions, IWsOptions } from './interfaces';
-import { CronJob } from 'cron';
-import winston from 'winston';
-import { Db, IDbOptions } from '@all41-dev/db-tools';
-import { Api } from './api';
-import { Ui } from './ui';
-import os from 'os';
-import { Repository, Workflow, WorkflowContext } from '@all41-dev/server.types';
-import { WebSocketServer } from 'ws';
-import cookieParser from 'cookie-parser';
-import jwt from 'jsonwebtoken';
-import { IncomingMessage } from 'http';
-import Cors from 'cors';
-import { AuthManager, IAuthOptions } from '@all41-dev/iam';
+if (args.ENV_FILE_PATH)
+  args.ENV_FILE_PATH
+    ? require("dotenv").config({ path: args.ENV_FILE_PATH })
+    : require("dotenv").config();
+import express, { Router } from "express";
+import * as http from "http";
+import {
+  IApiOptions,
+  IJobOptions,
+  IServerOptions,
+  IUiOptions,
+  IStaticRouteOptions,
+  IAmqpOptions,
+  IWsOptions,
+} from "./interfaces";
+import { CronJob } from "cron";
+import winston from "winston";
+import { Db, IDbOptions } from "@all41-dev/db-tools";
+import { Api } from "./api";
+import { Ui } from "./ui";
+import os from "os";
+import { Repository, Workflow, WorkflowContext } from "@all41-dev/server.types";
+import { WebSocketServer } from "ws";
+import cookieParser from "cookie-parser";
+import jwt from "jsonwebtoken";
+import { IncomingMessage } from "http";
+import Cors from "cors";
+import { AuthManager, IAuthOptions } from "@all41-dev/iam";
 
 /**
  * @description hosts all microservice functionalities
@@ -38,7 +46,11 @@ export class Server {
   protected options: IServerOptions;
   protected _auth: AuthManager | undefined = undefined;
   protected readonly _app: express.Application = express();
-  protected readonly _routes: { router: Router; path: string; requireAuth: boolean }[] = [];
+  protected readonly _routes: {
+    router: Router;
+    path: string;
+    requireAuth: boolean;
+  }[] = [];
   protected readonly _jobs: {
     instance: CronJob;
     code: string;
@@ -49,7 +61,9 @@ export class Server {
   protected readonly _dbs: Db<any>[] = [];
   protected readonly _amqp: { [key: string]: IAmqpOptions } = {};
   protected readonly _repositories: { [key: string]: Repository<any> } = {};
-  protected readonly _workflows: { [key: string]: new (context: WorkflowContext) => Workflow<any> } = {};
+  protected readonly _workflows: {
+    [key: string]: new (context: WorkflowContext) => Workflow<any>;
+  } = {};
   protected readonly _websockets: { [key: string]: IWsOptions } = {};
   private readonly _apiArray: IApiOptions<Api<any>>[] = [];
 
@@ -64,20 +78,28 @@ export class Server {
       // If we're not in production then **ALSO** log to the `console`
       // with the colorized simple format.
       //
-      if (process.env.NODE_ENV !== 'production') {
-        Server._logger.add(new winston.transports.Console({
-          format: winston.format.combine(
-            winston.format.colorize(),
-            winston.format.timestamp(),
-            winston.format.printf(ev => `${ev.timestamp}> ${ev.level}: ${ev.message}`),
-            // winston.format.errors(),
-          ), level: options.consoleLogLevel || options.loggerOptions.level || 'debug',
-        }));
+      if (process.env.NODE_ENV !== "production") {
+        Server._logger.add(
+          new winston.transports.Console({
+            format: winston.format.combine(
+              winston.format.colorize(),
+              winston.format.timestamp(),
+              winston.format.printf(
+                (ev) => `${ev.timestamp}> ${ev.level}: ${ev.message}`
+              )
+              // winston.format.errors(),
+            ),
+            level:
+              options.consoleLogLevel || options.loggerOptions.level || "debug",
+          })
+        );
       }
 
       // register dbs
       if (options.dbs) {
-        const dbArray = Array.isArray(options.dbs) ? options.dbs : [options.dbs];
+        const dbArray = Array.isArray(options.dbs)
+          ? options.dbs
+          : [options.dbs];
 
         for (const db of dbArray) {
           if (this.options.mute) db.mute = true;
@@ -91,11 +113,15 @@ export class Server {
 
       // register uis
       if (options.uis) {
-        const uiArray = Array.isArray(options.uis) ? options.uis : [options.uis];
+        const uiArray = Array.isArray(options.uis)
+          ? options.uis
+          : [options.uis];
 
         for (const ui of uiArray) {
           if (this.options.mute) ui.mute = true;
-          if (!options.auth) { ui.requireAuth = false; }
+          if (!options.auth) {
+            ui.requireAuth = false;
+          }
           this._registerUi(ui);
         }
       }
@@ -106,23 +132,31 @@ export class Server {
 
       // register apis
       if (options.apis) {
-        this._apiArray = Array.isArray(options.apis) ? options.apis : [options.apis];
+        this._apiArray = Array.isArray(options.apis)
+          ? options.apis
+          : [options.apis];
       }
 
       // register static
       if (options.statics) {
-        const staticArray = Array.isArray(options.statics) ? options.statics : [options.statics];
+        const staticArray = Array.isArray(options.statics)
+          ? options.statics
+          : [options.statics];
 
         for (const stat of staticArray) {
           if (this.options.mute) stat.mute = true;
-          if (!options.auth) { stat.requireAuth = false; }
+          if (!options.auth) {
+            stat.requireAuth = false;
+          }
           this._registerStatic(stat);
         }
       }
 
       // register jobs
       if (options.jobs) {
-        const jobArray = Array.isArray(options.jobs) ? options.jobs : [options.jobs];
+        const jobArray = Array.isArray(options.jobs)
+          ? options.jobs
+          : [options.jobs];
 
         for (const job of jobArray) {
           if (this.options.mute) job.mute = true;
@@ -138,28 +172,43 @@ export class Server {
       if (options.masterApiKey) {
         this.masterApiKey = options.masterApiKey;
       }
-
     } catch (error) {
-      Server.logger.log('crit', (error as Error).message, {
+      Server.logger.log("crit", (error as Error).message, {
         error: error,
-        title: 'error while building all41 server',
-        body: 'exception thrown in all41.server.Server constructor\nServer is stopped',
+        title: "error while building all41 server",
+        body: "exception thrown in all41.server.Server constructor\nServer is stopped",
         options,
-      })
+      });
     }
   }
 
-  public static get logger(): winston.Logger { return Server._logger; }
+  public static get logger(): winston.Logger {
+    return Server._logger;
+  }
 
-  public get repositories(): { readonly [key: string]: Repository<any> } { return this._repositories; }
-  public get workflows(): { readonly [key: string]: new (context: WorkflowContext) => Workflow<any> } { return this._workflows; }
-  public get websockets(): { readonly [key: string]: IWsOptions } { return this._websockets; }
-  public get httpPort(): number | undefined { return this.options.httpPort; }
+  public get repositories(): { readonly [key: string]: Repository<any> } {
+    return this._repositories;
+  }
+  public get workflows(): {
+    readonly [key: string]: new (context: WorkflowContext) => Workflow<any>;
+  } {
+    return this._workflows;
+  }
+  public get websockets(): { readonly [key: string]: IWsOptions } {
+    return this._websockets;
+  }
+  public get httpPort(): number | undefined {
+    return this.options.httpPort;
+  }
   public get app(): express.Application {
     return this._app;
   }
-  public get dbs(): Db<any>[] { return this._dbs || []; }
-  public get amqp(): { [key: string]: IAmqpOptions } { return this._amqp; }
+  public get dbs(): Db<any>[] {
+    return this._dbs || [];
+  }
+  public get amqp(): { [key: string]: IAmqpOptions } {
+    return this._amqp;
+  }
 
   public async stop(killProcess = true): Promise<void> {
     if (this.http) {
@@ -167,45 +216,63 @@ export class Server {
         this.http.close((): void => {
           Server.logger.info({
             message: `server stopped on ${os.hostname}`,
-            hash: 'server-state',
+            hash: "server-state",
           });
           ok();
         });
       });
     }
     if (this._jobs) {
-      for (const job of this._jobs) { job.instance.stop(); }
+      for (const job of this._jobs) {
+        job.instance.stop();
+      }
     }
     if (this._dbs) {
-      for (const db of this._dbs) { try { await db.sequelize.close(); } catch { Server.logger.info('Error closing db: continue stop'); } }
+      for (const db of this._dbs) {
+        try {
+          await db.sequelize.close();
+        } catch {
+          Server.logger.info("Error closing db: continue stop");
+        }
+      }
     }
     if (killProcess) process.exit(0);
   }
   public async restart(): Promise<void> {
-
     if (!this.http) {
-      throw new Error('http server not started');
+      throw new Error("http server not started");
     }
-    Server.logger.info('restarting server');
+    Server.logger.info("restarting server");
     await this.stop(false);
     await new Promise<void>((ok): void => {
       this._app.listen(this.httpPort, () => {
-        Server.logger.info('Restart successful.')
+        Server.logger.info("Restart successful.");
         ok();
-      })
+      });
     });
-    for (const job of this._jobs) { job.instance.stop(); }
+    for (const job of this._jobs) {
+      job.instance.stop();
+    }
   }
   public async start(): Promise<void> {
     try {
-      for (const db of this._dbs) { await db.init(); }
-      this._app.use(Cors({
-        credentials: true,
-      }))
+      for (const db of this._dbs) {
+        await db.init();
+      }
+      this._app.use(
+        Cors({
+          origin: true,
+          allowedHeaders: ["Authorization"],
+          methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+          credentials: true,
+        })
+      );
       this._app.use(cookieParser());
       for (const api of this._apiArray) {
         if (this.options.mute) api.mute = true;
-        if (!this.options.auth) { api.requireAuth = false; }
+        if (!this.options.auth) {
+          api.requireAuth = false;
+        }
         this._registerApi(api);
       }
       await new Promise<void>((ok): void => {
@@ -223,12 +290,21 @@ export class Server {
 
         for (const route of sortedRoutes) {
           if (route.requireAuth && this._auth) {
-            this._app.use(route.path, async (req, res, next) => {
-              if (!req.headers['authorization'] && !req.cookies['auth'] && req.cookies['refresh']) {
-                this._auth?.refreshToken(req)
-              }
-              next();
-            }, this._auth.authMiddleware, route.router);
+            this._app.use(
+              route.path,
+              async (req, res, next) => {
+                if (
+                  !req.headers["authorization"] &&
+                  !req.cookies["auth"] &&
+                  req.cookies["refresh"]
+                ) {
+                  this._auth?.refreshToken(req);
+                }
+                next();
+              },
+              this._auth.authMiddleware,
+              route.router
+            );
           }
           this._app.use(route.path, route.router);
         }
@@ -237,7 +313,7 @@ export class Server {
           if (!this.options.mute) {
             Server.logger.info({
               message: `${os.hostname} App listening on port ${this.options.httpPort}`,
-              hash: 'api-state',
+              hash: "api-state",
             });
           }
           ok();
@@ -249,7 +325,7 @@ export class Server {
 
       // Handles websocket connections w/ or w/o auth
 
-      this.http.on('upgrade', async (request, socket, head) => {
+      this.http.on("upgrade", async (request, socket, head) => {
         let wsServer: IWsOptions | undefined;
         for (const ws of Object.keys(this.websockets)) {
           if (request.url?.endsWith(this.websockets[ws].path)) {
@@ -259,17 +335,19 @@ export class Server {
         }
         if (wsServer && wsServer.requireAuth) {
           const cookies = this._parseCookies(request);
-          let jwtToken = cookies['auth'];
-          const refreshToken = cookies['refresh'];
+          let jwtToken = cookies["auth"];
+          const refreshToken = cookies["refresh"];
           if (!jwtToken) {
             if (!refreshToken) {
-              socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+              socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
               socket.destroy();
               return;
             }
-            const refreshedToken = await AuthManager.getInstance(this.options.auth).generateAccessToken(refreshToken);
+            const refreshedToken = await AuthManager.getInstance(
+              this.options.auth
+            ).generateAccessToken(refreshToken);
             if (!refreshedToken) {
-              socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+              socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
               socket.destroy();
               return;
             }
@@ -277,45 +355,70 @@ export class Server {
           }
 
           if (!this.options.auth) {
-            socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
+            socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
             socket.destroy();
             return;
           }
 
-          jwt.verify(jwtToken, this.options.auth.publicKey, { algorithms: ['RS256'] }, (err, decoded) => {
-            if (err) {
-              socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
-              socket.destroy();
-              return;
-            }
-
-            if (!wsServer) { // should not happen, but eslint is happy
-              socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
-              socket.destroy();
-              return;
-            }
-
-            const user = decoded;
-            (wsServer.server as WebSocketServer).handleUpgrade(request, socket, head, (ws) => {
-              if (!wsServer) {
-                socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
+          jwt.verify(
+            jwtToken,
+            this.options.auth.publicKey,
+            { algorithms: ["RS256"] },
+            (err, decoded) => {
+              if (err) {
+                socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
                 socket.destroy();
                 return;
               }
-              (wsServer.server as WebSocketServer).emit('connection', ws, request, user);
-            });
-          });
-        } else if (wsServer) {
-          (wsServer.server as WebSocketServer).handleUpgrade(request, socket, head, (ws) => {
-            if (!wsServer) {
-              socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
-              socket.destroy();
-              return;
+
+              if (!wsServer) {
+                // should not happen, but eslint is happy
+                socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
+                socket.destroy();
+                return;
+              }
+
+              const user = decoded;
+              (wsServer.server as WebSocketServer).handleUpgrade(
+                request,
+                socket,
+                head,
+                (ws) => {
+                  if (!wsServer) {
+                    socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
+                    socket.destroy();
+                    return;
+                  }
+                  (wsServer.server as WebSocketServer).emit(
+                    "connection",
+                    ws,
+                    request,
+                    user
+                  );
+                }
+              );
             }
-            (wsServer.server as WebSocketServer).emit('connection', ws, request);
-          });
+          );
+        } else if (wsServer) {
+          (wsServer.server as WebSocketServer).handleUpgrade(
+            request,
+            socket,
+            head,
+            (ws) => {
+              if (!wsServer) {
+                socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
+                socket.destroy();
+                return;
+              }
+              (wsServer.server as WebSocketServer).emit(
+                "connection",
+                ws,
+                request
+              );
+            }
+          );
         } else {
-          socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
+          socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
           socket.destroy();
         }
       });
@@ -324,15 +427,15 @@ export class Server {
         Server.logger.info(`Server started on ${os.hostname}`);
       }
 
-      process.on('SIGINT', this.stop);
-      process.on('SIGTERM', this.stop);
+      process.on("SIGINT", this.stop);
+      process.on("SIGTERM", this.stop);
     } catch (error) {
-      Server.logger.log('crit', (error as Error).message, {
+      Server.logger.log("crit", (error as Error).message, {
         error,
-        title: 'error while starting all41 server',
-        body: 'exception thrown in all41.server.Server.start()\nServer is stopped',
+        title: "error while starting all41 server",
+        body: "exception thrown in all41.server.Server.start()\nServer is stopped",
         server: this,
-      })
+      });
     }
   }
 
@@ -371,7 +474,7 @@ export class Server {
     const job = this._jobs.find((j) => j.code === code);
     if (!job) throw new Error(`job '${code}' not found, can't be started.`);
     job.instance.start();
-    job.isScheduled = true
+    job.isScheduled = true;
     Server.logger.info(`job ${job.name} scheduled`);
     if (doExecute) {
       job.instance.fireOnTick();
@@ -402,25 +505,32 @@ export class Server {
     return job.instance.running || false;
   }
 
-  public registerWsServer(name: string, server: WebSocketServer, path: string, useAuth = false): void {
+  public registerWsServer(
+    name: string,
+    server: WebSocketServer,
+    path: string,
+    useAuth = false
+  ): void {
     this._websockets[name] = { server: server, requireAuth: useAuth, path };
-    this.websockets[name].server.on('connection', (ws: WebSocket & { user: any }, request: IncomingMessage, user: any) => {
-      ws.user = user;
-    });
+    this.websockets[name].server.on(
+      "connection",
+      (ws: WebSocket & { user: any }, request: IncomingMessage, user: any) => {
+        ws.user = user;
+      }
+    );
   }
 
   public getAmqpUrl(id: string): AMQP.Options.Connect {
-    if (!this._amqp) throw new Error('amqp not initialized');
+    if (!this._amqp) throw new Error("amqp not initialized");
     if (!this._amqp[id]) throw new Error(`amqp '${id}' not found`);
     return this._amqp[id].params;
   }
 
   public getAmqpChannelNames(id: string): string[] {
-    if (!this._amqp) throw new Error('amqp not initialized');
+    if (!this._amqp) throw new Error("amqp not initialized");
     if (!this._amqp[id]) throw new Error(`amqp '${id}' not found`);
     return Object.keys(this._amqp[id].channels);
   }
-
 
   public amqpConnect(id: string): Promise<void> {
     return new Promise(async (resolve, reject) => {
@@ -466,7 +576,7 @@ export class Server {
 
       try {
         const con = this._amqp[id].connection;
-        if (!con) throw new Error('the amqp connection should exist');
+        if (!con) throw new Error("the amqp connection should exist");
         const channel = await con.createChannel();
         this._amqp[id].channels[name] = channel;
         resolve();
@@ -497,7 +607,12 @@ export class Server {
     });
   }
 
-  async amqpCreateExchange(id: string, channel: string, name: string, type: string): Promise<void> {
+  async amqpCreateExchange(
+    id: string,
+    channel: string,
+    name: string,
+    type: string
+  ): Promise<void> {
     return new Promise(async (resolve, reject) => {
       if (!this._amqp[id].connection) {
         reject(new Error("No connection"));
@@ -512,7 +627,9 @@ export class Server {
       }
 
       try {
-        await this._amqp[id].channels[channel].assertExchange(name, type, { durable: false });
+        await this._amqp[id].channels[channel].assertExchange(name, type, {
+          durable: false,
+        });
         resolve();
       } catch (error) {
         reject(error);
@@ -539,19 +656,31 @@ export class Server {
     });
   }
 
-  async amqpCreateQueue(id: string, channel: string, name: string, exchange: string, pattern?: string): Promise<void> {
+  async amqpCreateQueue(
+    id: string,
+    channel: string,
+    name: string,
+    exchange: string,
+    pattern?: string
+  ): Promise<void> {
     return new Promise(async (resolve, reject) => {
       if (!this._amqp[id].channels[channel]) {
         reject(new Error(`amqp channel '${channel}' not found`));
       }
       try {
-        await this._amqp[id].channels[channel].assertQueue(name, { durable: false });
+        await this._amqp[id].channels[channel].assertQueue(name, {
+          durable: false,
+        });
       } catch (error) {
         reject(error);
       }
       try {
         if (pattern != null) {
-          await this._amqp[id].channels[channel].bindQueue(name, exchange, pattern);
+          await this._amqp[id].channels[channel].bindQueue(
+            name,
+            exchange,
+            pattern
+          );
         } else {
           await this._amqp[id].channels[channel].bindQueue(name, exchange, "");
         }
@@ -562,7 +691,11 @@ export class Server {
     });
   }
 
-  async amqpDeleteQueue(id: string, channel: string, name: string): Promise<void> {
+  async amqpDeleteQueue(
+    id: string,
+    channel: string,
+    name: string
+  ): Promise<void> {
     return new Promise(async (resolve, reject) => {
       if (!this._amqp[id]) reject(new Error(`amqp '${id}' not found`));
       if (!this._amqp[id].channels[channel]) {
@@ -577,13 +710,23 @@ export class Server {
     });
   }
 
-  async amqpSend(id: string, channel: string, exchange: string, routingKey: string, message: string): Promise<void> {
+  async amqpSend(
+    id: string,
+    channel: string,
+    exchange: string,
+    routingKey: string,
+    message: string
+  ): Promise<void> {
     return new Promise(async (resolve, reject) => {
       if (!this._amqp[id].channels[channel]) {
         reject(new Error(`amqp channel '${channel}' not found`));
       }
       try {
-        this._amqp[id].channels[channel].publish(exchange, routingKey, Buffer.from(message));
+        this._amqp[id].channels[channel].publish(
+          exchange,
+          routingKey,
+          Buffer.from(message)
+        );
         resolve();
       } catch (error) {
         reject(error);
@@ -591,7 +734,13 @@ export class Server {
     });
   }
 
-  async amqpReceive(id: string, channel: string, queue: string, onMessage: any, maxNumber?: number): Promise<string> {
+  async amqpReceive(
+    id: string,
+    channel: string,
+    queue: string,
+    onMessage: any,
+    maxNumber?: number
+  ): Promise<string> {
     return new Promise(async (resolve, reject) => {
       if (!this._amqp[id].channels[channel]) {
         reject(new Error(`amqp channel '${channel}' not found`));
@@ -600,7 +749,9 @@ export class Server {
         if (maxNumber) {
           await this._amqp[id].channels[channel].prefetch(maxNumber);
         }
-        await this._amqp[id].channels[channel].consume(queue, onMessage, { noAck: false });
+        await this._amqp[id].channels[channel].consume(queue, onMessage, {
+          noAck: false,
+        });
       } catch (error) {
         reject(error);
       }
@@ -616,19 +767,20 @@ export class Server {
     });
   }
 
-
   protected _registerStatic(staticOptions: IStaticRouteOptions): void {
     const router = Router();
 
-    router.use('/', express.static(staticOptions.ressourcePath));
-    staticOptions.getRoutes?.forEach((route: { path: string; handler: (req: any, res: any) => void }) => {
-      router.get(route.path, route.handler);
-    });
+    router.use("/", express.static(staticOptions.ressourcePath));
+    staticOptions.getRoutes?.forEach(
+      (route: { path: string; handler: (req: any, res: any) => void }) => {
+        router.get(route.path, route.handler);
+      }
+    );
 
     this._routes.push({
       router,
       path: staticOptions.baseRoute,
-      requireAuth: staticOptions.requireAuth || false
+      requireAuth: staticOptions.requireAuth || false,
     });
 
     // if (ui.requireAuth) { this._app.use(ui.baseRoute, requiresAuth(), uiInst); }
@@ -637,14 +789,22 @@ export class Server {
 
   protected _registerUi(uiOpt: IUiOptions<Ui<any>>): void {
     const uiInst = new uiOpt.type(uiOpt).init();
-    this._routes.push({ router: uiInst, path: uiOpt.baseRoute, requireAuth: uiOpt.requireAuth || false })
+    this._routes.push({
+      router: uiInst,
+      path: uiOpt.baseRoute,
+      requireAuth: uiOpt.requireAuth || false,
+    });
     // if (ui.requireAuth) { this._app.use(ui.baseRoute, requiresAuth(), uiInst); }
     // else { this._app.use(ui.baseRoute, uiInst); }
   }
 
   protected _registerApi(apiOpt: IApiOptions<Api<any>>): void {
     const api = new apiOpt.type(apiOpt).init();
-    this._routes.push({ router: api, path: apiOpt.baseRoute, requireAuth: apiOpt.requireAuth || false })
+    this._routes.push({
+      router: api,
+      path: apiOpt.baseRoute,
+      requireAuth: apiOpt.requireAuth || false,
+    });
     // if (apiOpt.requireAuth) { this._app.use(apiOpt.baseRoute, requiresAuth(), api); }
     // else { this._app.use(apiOpt.baseRoute, api); }
   }
@@ -653,14 +813,15 @@ export class Server {
     const list: { [key: string]: string } = {};
     const rc = request.headers.cookie;
 
-    rc && rc.split(';').forEach(function (cookie) {
-      const [name, ...other] = cookie.split('=');
-      const trimmedName = name.trim();
-      if (!trimmedName) return;
-      const value = other.join('=');
-      if (!value) return;
-      list[trimmedName] = decodeURIComponent(value);
-    });
+    rc &&
+      rc.split(";").forEach(function (cookie) {
+        const [name, ...other] = cookie.split("=");
+        const trimmedName = name.trim();
+        if (!trimmedName) return;
+        const value = other.join("=");
+        if (!value) return;
+        list[trimmedName] = decodeURIComponent(value);
+      });
 
     return list;
   }
@@ -677,12 +838,16 @@ export class Server {
         runOnInit: false,
         start: false,
         context: jobOpt.context,
-      }), code: jobOpt.code || jobOpt.name, name: jobOpt.name, isScheduled: false, options: { execOnStart: jobOpt.executeOnStart }
+      }),
+      code: jobOpt.code || jobOpt.name,
+      name: jobOpt.name,
+      isScheduled: false,
+      options: { execOnStart: jobOpt.executeOnStart },
     });
     if (!jobOpt.mute) {
       Server.logger.info({
         message: `Job ${jobOpt.name} referenced on ${os.hostname}.`,
-        hash: 'job-state',
+        hash: "job-state",
       });
     }
   }
@@ -690,6 +855,6 @@ export class Server {
   protected async _registerAuth(authOptions: IAuthOptions): Promise<void> {
     this._auth = AuthManager.getInstance(authOptions);
 
-    this.app.use('/auth', this._auth.init());
+    this.app.use("/auth", this._auth.init());
   }
 }
