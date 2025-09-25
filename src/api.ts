@@ -14,18 +14,18 @@ export abstract class Api<T extends Api<T>> {
     this.router = this.createRouter();
   }
 
-  protected createRouter(options?: CorsOptions): express.Router {
-    const baseOptions: CorsOptions = {
+  protected createRouter(corsOptions?: CorsOptions): express.Router {
+    const baseCorsOptions: CorsOptions = {
       origin: '*',
-      allowedHeaders: ['Authorization'],
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+      allowedHeaders: ['Authorization', 'Accept', 'Origin', 'DNT', 'X-CustomHeader', 'Keep-Alive', 'User-Agent', 'X-Requested-With', 'If-Modified-Since', 'Cache-Control', 'Content-Type', 'Content-Range', 'Range'],
+      methods: ['OPTIONS', 'GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
       credentials: true
     }
 
     const router = express.Router();
     router.use(express.json({ limit: '6mb' }));
     router.use(express.urlencoded({ extended: true }));
-    router.use(Cors(options ? options : baseOptions));
+    router.use(Cors(corsOptions ? corsOptions : baseCorsOptions));
     return router;
   }
 
