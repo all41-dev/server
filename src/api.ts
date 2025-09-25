@@ -25,7 +25,7 @@ export abstract class Api<T extends Api<T>> {
     const router = express.Router();
     router.use(express.json({ limit: '6mb' }));
     router.use(express.urlencoded({ extended: true }));
-    router.use(Cors(options ? options: baseOptions));
+    router.use(Cors(options ? options : baseOptions));
     return router;
   }
 
