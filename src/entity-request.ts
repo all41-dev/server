@@ -17,7 +17,6 @@ export abstract class EntityRequest<T1 extends Model<T1>, T2 extends PkPropType>
     this._modelType = modelType;
   }
 
-  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected static copyProps<T3>(from: any, to: Partial<T3>, props: (keyof T3)[]): Partial<T3> {
     for (const pid in props) {
       const pName = props[pid];
@@ -113,7 +112,6 @@ export abstract class EntityRequest<T1 extends Model<T1>, T2 extends PkPropType>
 
   public abstract dbToClient(dbObj: T1): Promise<T2>;
   public abstract clientToDb(clientObj: T2): Promise<T1>;
-  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   public abstract setFilter(opt: any): void;
   public abstract preCreation(obj: T2): Promise<T2>;
   public abstract preUpdate(obj: T2): Promise<T2>;

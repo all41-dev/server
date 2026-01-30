@@ -3,9 +3,8 @@ import AMQP from "amqplib";
 const args = minimist(process.argv.slice(2));
 // eslint-disable-next-line no-console
 if (args.ENV_FILE_PATH) console.info(`Using config file: ${args.ENV_FILE_PATH}`);
-args.ENV_FILE_PATH ?
-  require('dotenv').config({ path: args.ENV_FILE_PATH }) :
-  require('dotenv').config();
+// eslint-disable-next-line @typescript-eslint/no-unused-expressions, @typescript-eslint/no-require-imports
+args.ENV_FILE_PATH ? require('dotenv').config({ path: args.ENV_FILE_PATH }) : require('dotenv').config();
 import express, { Router } from 'express';
 import * as http from 'http';
 import { IApiOptions, IJobOptions, IServerOptions, IUiOptions, IStaticRouteOptions, IAmqpOptions, IWsOptions } from './interfaces';
@@ -653,14 +652,16 @@ export class Server {
     const list: { [key: string]: string } = {};
     const rc = request.headers.cookie;
 
-    rc && rc.split(';').forEach(function (cookie) {
-      const [name, ...other] = cookie.split('=');
-      const trimmedName = name.trim();
-      if (!trimmedName) return;
-      const value = other.join('=');
-      if (!value) return;
-      list[trimmedName] = decodeURIComponent(value);
-    });
+    if (rc) {
+      rc.split(';').forEach(function (cookie) {
+        const [name, ...other] = cookie.split('=');
+        const trimmedName = name.trim();
+        if (!trimmedName) return;
+        const value = other.join('=');
+        if (!value) return;
+        list[trimmedName] = decodeURIComponent(value);
+      });
+    }
 
     return list;
   }

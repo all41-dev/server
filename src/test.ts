@@ -58,7 +58,7 @@ server.start().then(async () => {
   // const res = await repo.getByKey('7fdac63b-bffc-440d-9ae2-813f123ba113');
   new DbDumper(dbOptions)
   const wf = new server.workflows.sample({ source: 'api', actionContext: { record: { exchangeCode: 'bar' } } }) as Workflow<SampleTable>;
-  const res = await wf.run();
+  await wf.run();
   // console.log(res);
 
   // server.stop().then(() => {

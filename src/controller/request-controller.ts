@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/member-ordering */
 import { Request, Response, Router } from 'express';
 import { EntityRequest, PkPropType } from '../entity-request';
 import { ControllerBase } from '@all41-dev/server.types';
