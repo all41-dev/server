@@ -27,7 +27,7 @@
   "dependencies": {
     "@all41-dev/db-tools": "1.4.2",
     "@all41-dev/iam": "^1.0.0",
-    "@all41-dev/log": "^1.2.5",
+    "@all41-dev/log": "^1.2.6",
     "@all41-dev/node-fetch": "^2.6.12",
     "@all41-dev/server.types": "^1.0.1",
     "@types/amqplib": "^0.10.1",
