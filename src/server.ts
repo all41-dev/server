@@ -2,34 +2,24 @@ import minimist from "minimist";
 import AMQP from "amqplib";
 const args = minimist(process.argv.slice(2));
 // eslint-disable-next-line no-console
-if (args.ENV_FILE_PATH)
-  args.ENV_FILE_PATH
-    ? require("dotenv").config({ path: args.ENV_FILE_PATH })
-    : require("dotenv").config();
-import express, { Router } from "express";
-import * as http from "http";
-import {
-  IApiOptions,
-  IJobOptions,
-  IServerOptions,
-  IUiOptions,
-  IStaticRouteOptions,
-  IAmqpOptions,
-  IWsOptions,
-} from "./interfaces";
-import { CronJob } from "cron";
-import winston from "winston";
-import { Db, IDbOptions } from "@all41-dev/db-tools";
-import { Api } from "./api";
-import { Ui } from "./ui";
-import os from "os";
-import { Repository, Workflow, WorkflowContext } from "@all41-dev/server.types";
-import { WebSocketServer } from "ws";
-import cookieParser from "cookie-parser";
-import jwt from "jsonwebtoken";
-import { IncomingMessage } from "http";
-import Cors from "cors";
-import { AuthManager, IAuthOptions } from "@all41-dev/iam";
+if (args.ENV_FILE_PATH) console.info(`Using config file: ${args.ENV_FILE_PATH}`);
+// eslint-disable-next-line @typescript-eslint/no-unused-expressions, @typescript-eslint/no-require-imports
+args.ENV_FILE_PATH ? require('dotenv').config({ path: args.ENV_FILE_PATH }) : require('dotenv').config();
+import express, { Router } from 'express';
+import * as http from 'http';
+import { IServerOptions } from './interfaces';
+import { Api, Ui, IApiOptions, IJobOptions, IUiOptions, IStaticRouteOptions, IAmqpOptions, IWsOptions } from '@all41-dev/server.types';
+import { CronJob } from 'cron';
+import winston from 'winston';
+import { Db, IDbOptions } from '@all41-dev/db-tools';
+import os from 'os';
+import { Repository, Workflow, WorkflowContext } from '@all41-dev/server.types';
+import { WebSocketServer } from 'ws';
+import cookieParser from 'cookie-parser';
+import jwt from 'jsonwebtoken';
+import { IncomingMessage } from 'http';
+import Cors from 'cors';
+import { AuthManager, IAuthOptions } from '@all41-dev/iam';
 
 /**
  * @description hosts all microservice functionalities
@@ -502,7 +492,7 @@ export class Server {
   public isJobRunning(code: string): boolean {
     const job = this._jobs.find((j) => j.code === code);
     if (!job) throw new Error(`job '${code}' not found`);
-    return job.instance.running || false;
+    return job.instance.isActive || false;
   }
 
   public registerWsServer(
@@ -813,15 +803,16 @@ export class Server {
     const list: { [key: string]: string } = {};
     const rc = request.headers.cookie;
 
-    rc &&
-      rc.split(";").forEach(function (cookie) {
-        const [name, ...other] = cookie.split("=");
+    if (rc) {
+      rc.split(';').forEach(function (cookie) {
+        const [name, ...other] = cookie.split('=');
         const trimmedName = name.trim();
         if (!trimmedName) return;
-        const value = other.join("=");
+        const value = other.join('=');
         if (!value) return;
         list[trimmedName] = decodeURIComponent(value);
       });
+    }
 
     return list;
   }
@@ -832,17 +823,13 @@ export class Server {
   }
   protected _registerJob(jobOpt: IJobOptions): void {
     this._jobs.push({
-      instance: new CronJob({
-        cronTime: jobOpt.schedule,
-        onTick: jobOpt.function,
-        runOnInit: false,
-        start: false,
-        context: jobOpt.context,
-      }),
-      code: jobOpt.code || jobOpt.name,
-      name: jobOpt.name,
-      isScheduled: false,
-      options: { execOnStart: jobOpt.executeOnStart },
+      instance: new CronJob(
+        jobOpt.schedule,
+        jobOpt.function,
+        undefined,
+        false,
+        jobOpt.context,
+      ), code: jobOpt.code || jobOpt.name, name: jobOpt.name, isScheduled: false, options: { execOnStart: jobOpt.executeOnStart }
     });
     if (!jobOpt.mute) {
       Server.logger.info({
