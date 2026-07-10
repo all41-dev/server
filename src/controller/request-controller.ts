@@ -1,5 +1,5 @@
 import { Request, Response, Router } from 'express';
-import { EntityRequest, PkPropType } from '../entity-request';
+import { EntityRequest, PkPropType } from '@all41-dev/server.types';
 import { ControllerBase } from '@all41-dev/server.types';
 import { Model } from 'sequelize-typescript';
 import { Server } from '../server';
@@ -22,7 +22,7 @@ export class RequestController<ENT extends EntityRequest<Model, any & PkPropType
     )
   }
 
-  public create(router?: Router) {
+  public create(router?: Router): Router {
     const usedRouter = super.createBase(router);
     return usedRouter;
   }
@@ -42,16 +42,19 @@ export class RequestController<ENT extends EntityRequest<Model, any & PkPropType
         throw reason;
       });
   }
+
   public async getById(req: Request, res: Response, er: ENT): Promise<void> {
     er.setIncludes(req.query.include as any);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id
 
-    return er.get(req.params.id)
+    return er.get(id)
       .then((data): void => { res.json(data) })
       .catch((reason): void => {
         res.status(500).json(reason);
         Server.logger.error(reason);
       });
   }
+
   public async post(req: Request, res: Response, er: ENT): Promise<void> {
     er.setIncludes(req.query.include as any);
 
@@ -62,18 +65,23 @@ export class RequestController<ENT extends EntityRequest<Model, any & PkPropType
         Server.logger.error(reason);
       });
   }
+
   public async patch(req: Request, res: Response, er: ENT): Promise<void> {
     er.setIncludes(req.query.include as any);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id
 
-    return er.patch({ receivedObj: req.body, keyValue: req.params.id, fields: req.query.fields as any })
+    return er.patch({ receivedObj: req.body, keyValue: id, fields: req.query.fields as any })
       .then((data): void => { res.json(data) })
       .catch((reason): void => {
         res.status(500).json(reason);
         Server.logger.error(reason);
       });
   }
+
   public async delete(req: Request, res: Response, er: ENT): Promise<void> {
-    return er.del(req.params.id)
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id
+
+    return er.del(id)
       .then((): void => { res.send(); })
       .catch((reason): void => {
         res.status(500).json(reason);
