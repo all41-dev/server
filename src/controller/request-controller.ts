@@ -1,5 +1,5 @@
 import { Request, Response, Router } from 'express';
-import { EntityRequest, PkPropType } from '@all41-dev/server.types';
+import { EntityRequest, extractParamId, PkPropType } from '@all41-dev/server.types';
 import { ControllerBase } from '@all41-dev/server.types';
 import { Model } from 'sequelize-typescript';
 import { Server } from '../server';
@@ -14,12 +14,12 @@ export class RequestController<ENT extends EntityRequest<Model, any & PkPropType
   constructor(er: new () => ENT) {
     super();
     this.defineRoutes(
-      { verb: 'get', path: '/', handlers: (req, res) => this.getAll(req, res, new er) },
-      { verb: 'get', path: '/:id', handlers: (req, res) => this.getById(req, res, new er) },
-      { verb: 'post', path: '/', handlers: (req, res) => this.post(req, res, new er) },
-      { verb: 'patch', path: '/:id', handlers: (req, res) => this.patch(req, res, new er) },
-      { verb: 'delete', path: '/:id', handlers: (req, res) => this.delete(req, res, new er) },
-    )
+      { verb: 'get', path: '/', handlers: (req, res) => this.getAll(req, res, new er()) },
+      { verb: 'get', path: '/:id', handlers: (req, res) => this.getById(req, res, new er()) },
+      { verb: 'post', path: '/', handlers: (req, res) => this.post(req, res, new er()) },
+      { verb: 'patch', path: '/:id', handlers: (req, res) => this.patch(req, res, new er()) },
+      { verb: 'delete', path: '/:id', handlers: (req, res) => this.delete(req, res, new er()) },
+    );
   }
 
   public create(router?: Router): Router {
@@ -31,7 +31,8 @@ export class RequestController<ENT extends EntityRequest<Model, any & PkPropType
     er.setFilter(req.query.filter);
     er.setIncludes(req.query.include as any);
 
-    return er.get()
+    return er
+      .get()
       .then((data): PkPropType[] => {
         res.json(data);
         return data;
@@ -45,10 +46,13 @@ export class RequestController<ENT extends EntityRequest<Model, any & PkPropType
 
   public async getById(req: Request, res: Response, er: ENT): Promise<void> {
     er.setIncludes(req.query.include as any);
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id
+    const id = extractParamId(req);
 
-    return er.get(id)
-      .then((data): void => { res.json(data) })
+    return er
+      .get(id)
+      .then((data): void => {
+        res.json(data);
+      })
       .catch((reason): void => {
         res.status(500).json(reason);
         Server.logger.error(reason);
@@ -58,8 +62,11 @@ export class RequestController<ENT extends EntityRequest<Model, any & PkPropType
   public async post(req: Request, res: Response, er: ENT): Promise<void> {
     er.setIncludes(req.query.include as any);
 
-    return er.post(req.body)
-      .then((data): void => { res.json(data) })
+    return er
+      .post(req.body)
+      .then((data): void => {
+        res.json(data);
+      })
       .catch((reason): void => {
         res.status(500).json(reason);
         Server.logger.error(reason);
@@ -68,10 +75,13 @@ export class RequestController<ENT extends EntityRequest<Model, any & PkPropType
 
   public async patch(req: Request, res: Response, er: ENT): Promise<void> {
     er.setIncludes(req.query.include as any);
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id
+    const id = extractParamId(req);
 
-    return er.patch({ receivedObj: req.body, keyValue: id, fields: req.query.fields as any })
-      .then((data): void => { res.json(data) })
+    return er
+      .patch({ receivedObj: req.body, keyValue: id, fields: req.query.fields as any })
+      .then((data): void => {
+        res.json(data);
+      })
       .catch((reason): void => {
         res.status(500).json(reason);
         Server.logger.error(reason);
@@ -79,10 +89,13 @@ export class RequestController<ENT extends EntityRequest<Model, any & PkPropType
   }
 
   public async delete(req: Request, res: Response, er: ENT): Promise<void> {
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id
+    const id = extractParamId(req);
 
-    return er.del(id)
-      .then((): void => { res.send(); })
+    return er
+      .del(id)
+      .then((): void => {
+        res.send();
+      })
       .catch((reason): void => {
         res.status(500).json(reason);
         Server.logger.error(reason);
