@@ -8,7 +8,7 @@ args.ENV_FILE_PATH ? require('dotenv').config({ path: args.ENV_FILE_PATH }) : re
 import express, { Router } from 'express';
 import * as http from 'http';
 import { IServerOptions } from './interfaces';
-import { Api, Ui, IApiOptions, IJobOptions, IUiOptions, IStaticRouteOptions, IAmqpOptions, IWsOptions, RequestContext } from '@all41-dev/server.types';
+import { Api, Ui, IApiOptions, IJobOptions, IUiOptions, IStaticRouteOptions, IAmqpOptions, IWsOptions, RequestContext, setUserTable } from '@all41-dev/server.types';
 import { CronJob } from 'cron';
 import winston from 'winston';
 import { Db, IDbOptions } from '@all41-dev/db-tools';
@@ -19,7 +19,7 @@ import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
 import { IncomingMessage } from 'http';
 import Cors from 'cors';
-import { AuthManager, IAuthOptions } from '@all41-dev/iam';
+import { DbUser, AuthManager, IAuthOptions } from '@all41-dev/iam';
 
 /**
  * @description hosts all microservice functionalities
@@ -233,6 +233,7 @@ export class Server {
   }
   public async start(): Promise<void> {
     try {
+      setUserTable(DbUser);
       for (const db of this._dbs) {
         await db.init();
       }
@@ -279,8 +280,13 @@ export class Server {
               RequestContext.middleware((req) => (req as any).user?.uuid),
               route.router,
             );
+          } else {
+            this._app.use(
+              route.path,
+              RequestContext.middleware(() => undefined),
+              route.router,
+            );
           }
-          this._app.use(route.path, route.router);
         }
 
         this.http = this._app.listen(this.httpPort, (): void => {
