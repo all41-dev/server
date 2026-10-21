@@ -42,7 +42,10 @@ export class Server {
     requireAuth: boolean;
   }[] = [];
   protected readonly _jobs: {
-    instance: CronJob;
+    // Absent when the job has no schedule: such a job only runs through executeJob().
+    instance?: CronJob;
+    function: () => any;
+    context?: any;
     code: string;
     name: string;
     isScheduled?: boolean;
@@ -201,7 +204,7 @@ export class Server {
     }
     if (this._jobs) {
       for (const job of this._jobs) {
-        job.instance.stop();
+        job.instance?.stop();
       }
     }
     if (this._dbs) {
@@ -228,7 +231,7 @@ export class Server {
       });
     });
     for (const job of this._jobs) {
-      job.instance.stop();
+      job.instance?.stop();
     }
   }
   public async start(): Promise<void> {
@@ -395,7 +398,19 @@ export class Server {
 
   public scheduleJobs(mute = false): void {
     for (const job of this._jobs) {
-      job.instance.start();
+      if (!job.instance) {
+        if (!mute) {
+          Server.logger.info(`job ${job.name} has no schedule, ad-hoc execution only`);
+        }
+        continue;
+      }
+      try {
+        job.instance.start();
+      } catch (error) {
+        job.isScheduled = false;
+        Server.logger.error(`job ${job.name} not scheduled: ${(error as Error).message}`);
+        continue;
+      }
       job.isScheduled = true;
       if (!mute) {
         Server.logger.info(`job ${job.name} scheduled`);
@@ -411,7 +426,7 @@ export class Server {
 
   public unscheduleJobs(): void {
     for (const job of this._jobs) {
-      job.instance.stop();
+      job.instance?.stop();
       job.isScheduled = false;
       Server.logger.info(`job ${job.name} unscheduled`);
     }
@@ -419,7 +434,7 @@ export class Server {
   public unscheduleJob(code: string): void {
     const job = this._jobs.find((j) => j.code === code);
     if (!job) throw new Error(`job '${code}' not found, can't be stopped.`);
-    job.instance.stop();
+    job.instance?.stop();
     job.isScheduled = false;
     Server.logger.info(`job ${job.name} unscheduled`);
   }
@@ -427,6 +442,7 @@ export class Server {
   public scheduleJob(code: string, doExecute = false): void {
     const job = this._jobs.find((j) => j.code === code);
     if (!job) throw new Error(`job '${code}' not found, can't be started.`);
+    if (!job.instance) throw new Error(`job '${code}' has no schedule, can't be started.`);
     job.instance.start();
     job.isScheduled = true;
     Server.logger.info(`job ${job.name} scheduled`);
@@ -440,7 +456,7 @@ export class Server {
     try {
       const job = this._jobs.find((j) => j.code === code);
       if (!job) throw new Error(`job '${code}' not found, can't be executed.`);
-      const resp = job.instance.fireOnTick();
+      const resp = job.instance ? job.instance.fireOnTick() : job.function.call(job.context);
       Server.logger.info(`job ${job.name} ad-hoc execution started`);
       return resp;
     } catch (err: unknown) {
@@ -456,7 +472,7 @@ export class Server {
   public isJobRunning(code: string): boolean {
     const job = this._jobs.find((j) => j.code === code);
     if (!job) throw new Error(`job '${code}' not found`);
-    return job.instance.isActive || false;
+    return job.instance?.isActive || false;
   }
 
   public registerWsServer(name: string, server: WebSocketServer, path: string, useAuth = false): void {
@@ -742,13 +758,17 @@ export class Server {
   }
   protected _registerJob(jobOpt: IJobOptions): void {
     this._jobs.push({
-      instance: CronJob.from({
-        cronTime: jobOpt.schedule,
-        onTick: jobOpt.function,
-        start: false,
-        runOnInit: false,
-        context: jobOpt.context,
-      }),
+      instance: jobOpt.schedule
+        ? CronJob.from({
+          cronTime: jobOpt.schedule,
+          onTick: jobOpt.function,
+          start: false,
+          runOnInit: false,
+          context: jobOpt.context,
+        })
+        : undefined,
+      function: jobOpt.function,
+      context: jobOpt.context,
       code: jobOpt.code || jobOpt.name,
       name: jobOpt.name,
       isScheduled: false,
