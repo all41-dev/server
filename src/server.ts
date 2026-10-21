@@ -742,7 +742,13 @@ export class Server {
   }
   protected _registerJob(jobOpt: IJobOptions): void {
     this._jobs.push({
-      instance: new CronJob(jobOpt.schedule, jobOpt.function, undefined, false, jobOpt.context),
+      instance: CronJob.from({
+        cronTime: jobOpt.schedule,
+        onTick: jobOpt.function,
+        start: false,
+        runOnInit: false,
+        context: jobOpt.context,
+      }),
       code: jobOpt.code || jobOpt.name,
       name: jobOpt.name,
       isScheduled: false,
