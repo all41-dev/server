@@ -3,6 +3,7 @@ import { Db, IDbOptions } from '@all41-dev/db-tools';
 import { LoggerOptions } from 'winston';
 import { Repository, Workflow, WorkflowContext } from '@all41-dev/server.types';
 import { IAuthOptions } from '@all41-dev/iam';
+import { ICorsOptions } from './cors';
 
 export interface IServerOptions {
   consoleLogLevel?: string;
@@ -21,4 +22,6 @@ export interface IServerOptions {
   mute?: boolean;
   httpPort?: number;
   masterApiKey?: string;
+  /** Browser origins allowed to call with credentials. Unset or empty: no CORS headers at all. */
+  cors?: ICorsOptions;
 }

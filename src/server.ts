@@ -18,7 +18,7 @@ import { WebSocketServer } from 'ws';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
 import { IncomingMessage } from 'http';
-import Cors from 'cors';
+import { corsMiddleware } from './cors';
 import { DbUser, AuthManager, IAuthOptions } from '@all41-dev/iam';
 
 /**
@@ -94,6 +94,9 @@ export class Server {
           this._registerDb(db);
         }
       }
+
+      // Before the auth router, which is mounted here and answers /auth itself.
+      this._app.use(corsMiddleware(options.cors));
 
       if (options.auth) {
         this._registerAuth(options.auth);
@@ -240,14 +243,6 @@ export class Server {
       for (const db of this._dbs) {
         await db.init();
       }
-      this._app.use(
-        Cors({
-          origin: true,
-          allowedHeaders: ['Authorization'],
-          methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-          credentials: true,
-        }),
-      );
       this._app.use(cookieParser());
       for (const api of this._apiArray) {
         if (this.options.mute) api.mute = true;
@@ -273,12 +268,6 @@ export class Server {
           if (route.requireAuth && this._auth) {
             this._app.use(
               route.path,
-              async (req, res, next) => {
-                if (!req.headers['authorization'] && !req.cookies['auth'] && req.cookies['refresh']) {
-                  this._auth?.refreshToken(req);
-                }
-                next();
-              },
               this._auth.authMiddleware,
               RequestContext.middleware((req) => (req as any).user?.uuid),
               route.router,
